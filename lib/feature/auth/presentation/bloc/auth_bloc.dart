@@ -1,0 +1,181 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:se7ety/core/enum/user_type_enum.dart';
+import 'package:se7ety/core/functions/dialogs.dart';
+import 'package:se7ety/core/services/local_storage.dart';
+import 'package:se7ety/feature/auth/presentation/bloc/auth_event.dart';
+import 'package:se7ety/feature/auth/presentation/bloc/auth_state.dart';
+
+class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  AuthBloc() : super(AuthInitialState()) {
+    on<AuthEvent>((event, emit) async {
+      if (event is RegisterEvent) {
+        await register(event, emit);
+      } else if (event is LoginEvent) {
+        await login(event, emit);
+      } else if (event is docRegistrationEvent) {
+        await docRegistration(
+          event,
+          emit,
+          event.imageUrl,
+          event.specialisation,
+          event.startTime,
+          event.endTime,
+          event.address,
+          event.phone1,
+          event.phone2,
+          event.bio,
+          event.context,
+        );
+      }
+    });
+  }
+
+  Future<void> register(RegisterEvent event, Emitter<AuthState> emit) async {
+    emit(AuthLoadingState());
+    try {
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: event.email,
+            password: event.password,
+          );
+
+      User? user = credential.user;
+      user?.updateDisplayName(event.name);
+
+      // FireStore
+
+      if (event.userType == UserType.patient) {
+        await FirebaseFirestore.instance
+            .collection("patients")
+            .doc(user?.uid)
+            .set({
+              'uid': user?.uid,
+              'name': event.name,
+              'email': event.email,
+              'age': '',
+              'image': '',
+            });
+      } else {
+        await FirebaseFirestore.instance
+            .collection("doctors")
+            .doc(user?.uid)
+            .set({
+              'uid': user?.uid,
+              'name': event.name,
+              'email': event.email,
+              'image': '',
+              'specialisation': '',
+              'bio': '',
+              'openHour': '',
+              'closeHour': '',
+              'address': '',
+              'phone1': '',
+              'phone2': '',
+              'createdAt': '',
+              'rating': 0,
+            });
+      }
+
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userToken,
+        value: user?.uid,
+      );
+
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userType,
+        value: event.userType.name,
+      );
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userName,
+        value: event.name,
+      );
+
+      emit(AuthSuccessState());
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        emit(AuthErrorState('كلمة المرور ضعيفة'));
+      } else if (e.code == 'email-already-in-use') {
+        emit(AuthErrorState('البريد الالكتروني مستخدم بالفعل'));
+      } else {
+        emit(AuthErrorState('حدث خطأ ما'));
+      }
+    } catch (e) {
+      print('Unexpected error: $e');
+      emit(AuthErrorState('حدث خطأ غير متوقع'));
+    }
+  }
+
+  Future<void> login(LoginEvent event, Emitter<AuthState> emit) async {
+    emit(AuthLoadingState());
+    try {
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: event.email,
+        password: event.password,
+      );
+
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userToken,
+        value: credential.user?.uid,
+      );
+
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userType,
+        value: event.userType.name,
+      );
+
+      emit(AuthSuccessState());
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        emit(AuthErrorState('لم يتم العثور علي مستخدم بهذا الايميل'));
+      } else if (e.code == 'wrong-password') {
+        emit(AuthErrorState('كلمة المرور غير صحيحة'));
+      } else {
+        emit(AuthErrorState('حدث خطأ ما'));
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> docRegistration(
+    docRegistrationEvent event,
+    Emitter<AuthState> emit,
+    String imageUrl,
+    dynamic specialisation,
+    String startTime,
+    String endTime,
+    String address,
+    String phone1,
+    String phone2,
+    String bio,
+    BuildContext context,
+  ) async {
+    emit(AuthLoadingState());
+    final uid = AppLocalStorage.getData(key: AppLocalStorage.userToken);
+    if (uid == null) {
+      showErrorDialog(context, 'لم يتم العثور على هوية المستخدم');
+      emit(AuthErrorState('لم يتم العثور على هوية المستخدم'));
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance.collection('doctors').doc(uid).update({
+        'image': imageUrl,
+        'specialisation': specialisation,
+        'openHour': startTime,
+        'closeHour': endTime,
+        'address': address,
+        'phone1': phone1,
+        'phone2': phone2,
+        'bio': bio,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      emit(AuthSuccessState());
+    } catch (e) {
+      showErrorDialog(context, 'حدث خطأ أثناء الحفظ: $e');
+    }
+  }
+}
