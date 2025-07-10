@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/doctor_card.dart';
-import 'package:se7ety/feature/auth/data/models/doctor_model.dart';
+import 'package:se7ety/feature/auth/data/model/doctor_model.dart';
 
 class TopRatedWidget extends StatefulWidget {
   const TopRatedWidget({super.key});

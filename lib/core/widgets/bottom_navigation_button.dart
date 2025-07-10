@@ -15,12 +15,12 @@ class BottomNavigationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
       child: SizedBox(
         width: double.infinity,
         height: 50,
         child: ElevatedButton(
-          onPressed: onPressed,
+          onPressed: onPressed ?? () {},
           style: ElevatedButton.styleFrom(
             backgroundColor: color ?? AppColors.color1,
             elevation: 2,

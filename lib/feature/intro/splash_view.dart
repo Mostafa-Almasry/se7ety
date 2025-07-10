@@ -24,14 +24,21 @@ class _SplashViewState extends State<SplashView> {
 
   Future<void> _navigateFromSplash() async {
     await Future.delayed(const Duration(seconds: 2));
-    final isLoggedIn = await AppLocalStorage.getData(
-      key: AppLocalStorage.userToken,
-    );
+    final isLoggedIn = await AppLocalStorage.getData(key: AppLocalStorage.uid);
     final isOnboardingShown =
         await AppLocalStorage.getData(key: AppLocalStorage.isOnboardingShown) ??
         false;
     final userType = await AppLocalStorage.getData(
       key: AppLocalStorage.userType,
+    );
+    final userImage = await AppLocalStorage.getData(
+      key: AppLocalStorage.imageUrl,
+    );
+    final userAddress = await AppLocalStorage.getData(
+      key: AppLocalStorage.userAddress,
+    );
+    print(
+      'DEBUG: isLoggedIn=$isLoggedIn, userType=$userType, isOnboardingShown=$isOnboardingShown, userImage=$userImage, userAddress =$userAddress',
     );
     if (!mounted) {
       return;
@@ -39,9 +46,9 @@ class _SplashViewState extends State<SplashView> {
 
     // Forcing logout for debugging
     // if the widget is no longer mounted..
-    // await AppLocalStorage.removeData(key: AppLocalStorage.userToken);
-    // Future.delayed(Duration(milliseconds: 2000));
-   
+    await AppLocalStorage.removeData(key: AppLocalStorage.uid);
+    Future.delayed(Duration(milliseconds: 2000));
+
     if (isLoggedIn != null) {
       if (userType == 'doctor') {
         // Navigate to proper screen where user is logged in

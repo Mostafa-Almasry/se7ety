@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:se7ety/core/constants/assets_manager.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/doctor_card.dart';
-import 'package:se7ety/feature/auth/data/models/doctor_model.dart';
+import 'package:se7ety/feature/auth/data/model/doctor_model.dart';
 
 class SearchList extends StatefulWidget {
   const SearchList({super.key, required this.searchKey});

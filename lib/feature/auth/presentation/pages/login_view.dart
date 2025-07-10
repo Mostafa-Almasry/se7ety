@@ -8,13 +8,13 @@ import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/custom_button.dart';
+import 'package:se7ety/core/widgets/custom_text_form_field.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_event.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_state.dart';
 import 'package:se7ety/feature/auth/presentation/pages/doc_registration_view.dart';
 import 'package:se7ety/feature/auth/presentation/pages/register_view.dart';
-import 'package:se7ety/core/widgets/custom_text_form_field.dart';
-import 'package:se7ety/feature/patient/home/presentation/page/patient_home_view.dart';
+import 'package:se7ety/feature/patient/patient_nav_bar.dart';
 
 // accounts:
 // abdelrahmankhaled@se7ety.com
@@ -56,8 +56,7 @@ class _LoginViewState extends State<LoginView> {
             if (widget.userType == UserType.doctor) {
               pushAndRemoveUntil(context, const DocRegistrationView());
             } else {
-              // change to patient view.
-              pushAndRemoveUntil(context, const PatientHomeView());
+              pushAndRemoveUntil(context, const PatientNavBar());
             }
           }
         },

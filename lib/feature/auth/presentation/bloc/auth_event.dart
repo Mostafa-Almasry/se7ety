@@ -29,7 +29,7 @@ class LoginEvent extends AuthEvent {
   });
 }
 
-class docRegistrationEvent extends AuthEvent {
+class DocRegistrationEvent extends AuthEvent {
   final BuildContext context;
   final String specialisation;
   final String imageUrl;
@@ -40,7 +40,7 @@ class docRegistrationEvent extends AuthEvent {
   final String phone2;
   final String bio;
 
-  docRegistrationEvent({
+  DocRegistrationEvent({
     required this.context,
     required this.imageUrl,
     required this.specialisation,
@@ -50,5 +50,23 @@ class docRegistrationEvent extends AuthEvent {
     required this.phone1,
     required this.phone2,
     required this.bio,
+  });
+}
+
+class PatientProfileUpdateEvent extends AuthEvent {
+  final BuildContext context;
+  final String? imageUrl;
+  final String? address;
+  final String? phone;
+  final String? name;
+  final String? age;
+
+  PatientProfileUpdateEvent({
+    required this.context,
+    this.imageUrl,
+    this.address,
+    this.phone,
+    this.name,
+    this.age,
   });
 }

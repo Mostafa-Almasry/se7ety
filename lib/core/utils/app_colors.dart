@@ -7,7 +7,7 @@ class AppColors {
   static const Color accentColor = Color(0xFFE6EFF9);
   static const Color grey = Color(0xFFB4AAAA);
   static const Color white = Color(0xFFFFFFFF);
-  static const Color redColor = Color(0xFFFF0000);
+  static const Color redColor = Color(0xffe8504f);
   static const Color titleColor = Color(0xFF353750);
   static final Color lightBlue = Colors.blue[50]!;
   static final Color iconBgColor = Color.fromARGB(255, 199, 213, 232);

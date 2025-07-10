@@ -3,7 +3,7 @@ import 'package:se7ety/core/constants/assets_manager.dart';
 import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
-import 'package:se7ety/feature/auth/data/models/doctor_model.dart';
+import 'package:se7ety/feature/auth/data/model/doctor_model.dart';
 import 'package:se7ety/feature/patient/search/page/doc_profile_view.dart';
 
 class DoctorCard extends StatelessWidget {

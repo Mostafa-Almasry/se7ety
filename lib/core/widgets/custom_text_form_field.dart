@@ -19,6 +19,7 @@ class CustomTextFormField extends StatefulWidget {
     this.textDirection,
     this.isSearch,
     this.onChanged,
+    this.suffixIconHasBg = false,
   });
   final String? hintText;
   final Icon? prefixIcon;
@@ -35,6 +36,7 @@ class CustomTextFormField extends StatefulWidget {
   final TextDirection? textDirection;
   final bool? isSearch;
   final void Function(String)? onChanged;
+  final bool? suffixIconHasBg;
 
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
@@ -59,7 +61,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       obscureText: widget.isPassword ? _isObsecure : false,
 
       decoration: InputDecoration(
-        
         border: InputBorder.none,
         hintText: widget.hintText,
         prefixIcon: widget.prefixIcon,
@@ -75,10 +76,20 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     _isObsecure ? Icons.visibility_off : Icons.visibility,
                   ),
                 )
-                : widget.suffixIcon ?? widget.suffixIconButton,
+                : widget.suffixIcon != null
+                ? (widget.suffixIconHasBg == true
+                    ? Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: AppColors.color1,
+                        shape: BoxShape.circle,
+                      ),
+                      child: widget.suffixIcon,
+                    )
+                    : widget.suffixIcon)
+                : widget.suffixIconButton,
 
         alignLabelWithHint: true,
-        
       ),
       onChanged: widget.onChanged,
     );

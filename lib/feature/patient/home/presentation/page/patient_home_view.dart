@@ -71,7 +71,7 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                         ),
                       ),
                       TextSpan(
-                        text: user?.displayName,
+                        text: user?.displayName ?? '',
                         style: getBodyStyle(
                           color: AppColors.color1,
                           fontSize: 20,

@@ -6,8 +6,8 @@ import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/bottom_navigation_button.dart';
-import 'package:se7ety/feature/auth/data/models/doctor_model.dart';
-import 'package:se7ety/feature/patient/booking/presentation/page/appointments_view.dart';
+import 'package:se7ety/feature/auth/data/model/doctor_model.dart';
+import 'package:se7ety/feature/patient/booking/presentation/page/booking_view.dart';
 import 'package:se7ety/feature/patient/search/widgets/info_tile_widget.dart';
 import 'package:se7ety/feature/patient/search/widgets/phone_button_widget.dart';
 
@@ -62,7 +62,7 @@ class _DocProfileViewState extends State<DocProfileView> {
                             ),
                   ),
                 ),
-                SizedBox(width: 30),
+                const SizedBox(width: 30),
 
                 //--------------------- Quick Overview ---------------------
                 Expanded(
@@ -189,7 +189,7 @@ class _DocProfileViewState extends State<DocProfileView> {
       bottomNavigationBar: BottomNavigationButton(
         text: "احجز موعد الان",
         onPressed: () {
-          push(context, AppointmentsView(doctor: widget.doctor));
+          push(context, BookingView(doctor: widget.doctor));
         },
       ),
     );

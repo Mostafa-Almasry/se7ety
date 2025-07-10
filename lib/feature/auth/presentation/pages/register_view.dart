@@ -8,13 +8,13 @@ import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/custom_button.dart';
+import 'package:se7ety/core/widgets/custom_text_form_field.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_event.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_state.dart';
 import 'package:se7ety/feature/auth/presentation/pages/doc_registration_view.dart';
 import 'package:se7ety/feature/auth/presentation/pages/login_view.dart';
-import 'package:se7ety/core/widgets/custom_text_form_field.dart';
-import 'package:se7ety/feature/intro/welcome_view.dart';
+import 'package:se7ety/feature/patient/patient_nav_bar.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key, required this.userType});
@@ -49,13 +49,12 @@ class _RegisterViewState extends State<RegisterView> {
             Navigator.pop(context);
             showErrorDialog(context, state.message);
           } else if (state is AuthSuccessState) {
-            Navigator.pop(context);
             await showSuccessDialog(context, 'تم انشاء حسابك بنجاح');
             if (widget.userType == UserType.doctor) {
               pushAndRemoveUntil(context, const DocRegistrationView());
             } else {
               // change to patient view.
-              pushAndRemoveUntil(context, const WelcomeView());
+              pushAndRemoveUntil(context, const PatientNavBar());
             }
           }
         },
@@ -132,7 +131,10 @@ class _RegisterViewState extends State<RegisterView> {
                         ),
                         TextButton(
                           onPressed: () {
-                            pushReplacement(context, LoginView(userType: widget.userType));
+                            pushReplacement(
+                              context,
+                              LoginView(userType: widget.userType),
+                            );
                           },
                           child: Text(
                             'سجل دخول',

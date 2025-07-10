@@ -37,13 +37,8 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
   final TextEditingController _phone1Controller = TextEditingController();
   final TextEditingController _phone2Controller = TextEditingController();
   TimeOfDay? _startTimePicked;
-  // ignore: unused_field
   TimeOfDay? _endTimePicked;
   String _avatarImageUrl = '';
-
-  // Mohamed
-  // mohamed@se7ety.com
-  // 12345678
 
   @override
   void initState() {
@@ -95,13 +90,6 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
     }
   }
 
-  // Abdelrahman Khaled
-  // abdo@se7ety.com
-  // 11111111
-  // test
-  // test@test.com
-  // password
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,7 +137,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                         alignment: Alignment.bottomRight,
                         children: [
                           CircleAvatar(
-                            radius: 40,
+                            radius: 60,
                             backgroundImage:
                                 _avatarImageUrl.isNotEmpty
                                     ? NetworkImage(_avatarImageUrl)
@@ -423,7 +411,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
               return;
             }
             context.read<AuthBloc>().add(
-              docRegistrationEvent(
+              DocRegistrationEvent(
                 context: context,
                 imageUrl: _avatarImageUrl,
                 specialisation: _specialisation,
@@ -458,6 +446,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
   showEndTimePicker() async {
     if (_startTimePicked == null) {
       showErrorDialog(context, 'من فضلك اختر وقت البدء أولاً');
+      return;
     }
     final picked = await showTimePicker(
       context: context,

@@ -15,7 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await register(event, emit);
       } else if (event is LoginEvent) {
         await login(event, emit);
-      } else if (event is docRegistrationEvent) {
+      } else if (event is DocRegistrationEvent) {
         await docRegistration(
           event,
           emit,
@@ -27,6 +27,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           event.phone1,
           event.phone2,
           event.bio,
+          event.context,
+        );
+      } else if (event is PatientProfileUpdateEvent) {
+        await patientProfileUpdate(
+          event,
+          emit,
+          event.imageUrl,
+          event.address,
+          event.phone,
+          event.name,
+          event.age,
           event.context,
         );
       }
@@ -80,7 +91,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
 
       await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userToken,
+        key: AppLocalStorage.uid,
         value: user?.uid,
       );
 
@@ -117,7 +128,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
 
       await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userToken,
+        key: AppLocalStorage.uid,
         value: credential.user?.uid,
       );
 
@@ -125,6 +136,28 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         key: AppLocalStorage.userType,
         value: event.userType.name,
       );
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('patients')
+              .doc(credential.user?.uid)
+              .get();
+      final userName = doc.data()?['name'] ?? '';
+
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userName,
+        value: userName,
+      );
+
+      // await AppLocalStorage.cacheData(
+      //   key: AppLocalStorage.userAddress,
+      //   value:
+      //       (await FirebaseFirestore.instance
+      //               .collection('patients')
+      //               .doc(credential.user?.uid)
+      //               .get())
+      //           .data()?['address'] ??
+      //       '',
+      // );
 
       emit(AuthSuccessState());
     } on FirebaseAuthException catch (e) {
@@ -141,7 +174,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> docRegistration(
-    docRegistrationEvent event,
+    DocRegistrationEvent event,
     Emitter<AuthState> emit,
     String imageUrl,
     dynamic specialisation,
@@ -154,7 +187,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     BuildContext context,
   ) async {
     emit(AuthLoadingState());
-    final uid = AppLocalStorage.getData(key: AppLocalStorage.userToken);
+    final uid = AppLocalStorage.getData(key: AppLocalStorage.uid);
     if (uid == null) {
       showErrorDialog(context, 'لم يتم العثور على هوية المستخدم');
       emit(AuthErrorState('لم يتم العثور على هوية المستخدم'));
@@ -172,6 +205,54 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         'bio': bio,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      emit(AuthSuccessState());
+    } catch (e) {
+      showErrorDialog(context, 'حدث خطأ أثناء الحفظ: $e');
+    }
+  }
+
+  Future<void> patientProfileUpdate(
+    PatientProfileUpdateEvent event,
+    Emitter<AuthState> emit,
+    String? imageUrl,
+    String? address,
+    String? phone,
+    String? name,
+    String? age,
+    BuildContext context,
+  ) async {
+    emit(AuthLoadingState());
+    final uid = AppLocalStorage.getData(key: AppLocalStorage.uid);
+    if (uid == null) {
+      showErrorDialog(context, 'لم يتم العثور على هوية المستخدم');
+      emit(AuthErrorState('لم يتم العثور على هوية المستخدم'));
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance.collection('patients').doc(uid).update({
+        'image': imageUrl,
+        'age': age,
+        'address': address,
+        'phone': phone,
+        'name': name,
+      });
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.imageUrl,
+        value: imageUrl,
+      );
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userName,
+        value: name,
+      );
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userAddress,
+        value: address,
+      );
+      await AppLocalStorage.cacheData(
+        key: AppLocalStorage.userPhone,
+        value: phone,
+      );
 
       emit(AuthSuccessState());
     } catch (e) {

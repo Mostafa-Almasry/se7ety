@@ -8,4 +8,5 @@ class AssetsManager {
   static const String doctor = "assets/images/doc.png";
   static const String doctorCard = "assets/images/doctor-card.svg";
   static const String noSearch = "assets/images/no-search.svg";
+  static const String noScheduled = "assets/images/no-scheduled.svg";
 }
