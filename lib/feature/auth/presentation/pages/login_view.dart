@@ -29,7 +29,7 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _loginKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   @override
@@ -56,7 +56,7 @@ class _LoginViewState extends State<LoginView> {
             if (widget.userType == UserType.doctor) {
               pushAndRemoveUntil(context, const DocRegistrationView());
             } else {
-              pushAndRemoveUntil(context, const PatientNavBar());
+              pushAndRemoveUntil(context, const PatientNavBar(page: 0,));
             }
           }
         },
@@ -66,7 +66,7 @@ class _LoginViewState extends State<LoginView> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Form(
-                key: _formKey,
+                key: _loginKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -83,7 +83,7 @@ class _LoginViewState extends State<LoginView> {
                       textAlign: TextAlign.end,
 
                       controller: _emailController,
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: const Icon(Icons.email),
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const Gap(20),
@@ -91,8 +91,8 @@ class _LoginViewState extends State<LoginView> {
                       controller: _passwordController,
                       textAlign: TextAlign.end,
                       hintText: '********',
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: Icon(Icons.visibility),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: const Icon(Icons.visibility),
                       isPassword: true,
                       keyboardType: TextInputType.visiblePassword,
                     ),
@@ -111,7 +111,7 @@ class _LoginViewState extends State<LoginView> {
                     CustomButton(
                       text: 'تسجيل الدخول',
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
+                        if (_loginKey.currentState!.validate()) {
                           // If all fields are valid, Do the login logic..
 
                           context.read<AuthBloc>().add(

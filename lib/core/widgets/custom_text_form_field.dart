@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 
 class CustomTextFormField extends StatefulWidget {
@@ -20,6 +21,8 @@ class CustomTextFormField extends StatefulWidget {
     this.isSearch,
     this.onChanged,
     this.suffixIconHasBg = false,
+    this.autoFocus,
+    this.inputFormatters,
   });
   final String? hintText;
   final Icon? prefixIcon;
@@ -37,6 +40,8 @@ class CustomTextFormField extends StatefulWidget {
   final bool? isSearch;
   final void Function(String)? onChanged;
   final bool? suffixIconHasBg;
+  final bool? autoFocus;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
@@ -48,47 +53,44 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   @override
   Widget build(BuildContext context) {
     Widget textField = TextFormField(
-      autofocus: false,
+      autofocus: widget.autoFocus ?? false,
       textDirection: widget.textDirection ?? TextDirection.rtl,
       onTap: widget.onTap,
       controller: widget.controller,
       validator: widget.validator,
-
       keyboardType: widget.keyboardType,
       maxLines: widget.maxLines ?? 1,
       textAlign: widget.textAlign ?? TextAlign.start,
       readOnly: widget.readOnly ?? false,
       obscureText: widget.isPassword ? _isObsecure : false,
-
+      inputFormatters: widget.inputFormatters ?? const [],
       decoration: InputDecoration(
         border: InputBorder.none,
         hintText: widget.hintText,
         prefixIcon: widget.prefixIcon,
-        suffixIcon:
-            widget.isPassword
-                ? IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _isObsecure = !_isObsecure;
-                    });
-                  },
-                  icon: Icon(
-                    _isObsecure ? Icons.visibility_off : Icons.visibility,
-                  ),
-                )
-                : widget.suffixIcon != null
+        suffixIcon: widget.isPassword
+            ? IconButton(
+                onPressed: () {
+                  setState(() {
+                    _isObsecure = !_isObsecure;
+                  });
+                },
+                icon: Icon(
+                  _isObsecure ? Icons.visibility_off : Icons.visibility,
+                ),
+              )
+            : widget.suffixIcon != null
                 ? (widget.suffixIconHasBg == true
                     ? Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: AppColors.color1,
-                        shape: BoxShape.circle,
-                      ),
-                      child: widget.suffixIcon,
-                    )
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: AppColors.color1,
+                          shape: BoxShape.circle,
+                        ),
+                        child: widget.suffixIcon,
+                      )
                     : widget.suffixIcon)
                 : widget.suffixIconButton,
-
         alignLabelWithHint: true,
       ),
       onChanged: widget.onChanged,

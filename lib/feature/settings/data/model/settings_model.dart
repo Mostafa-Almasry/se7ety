@@ -8,12 +8,15 @@ class SettingsModel {
   final Widget? leading;
   final void Function()? onTap;
 
-  SettingsModel({
-    this.trailing,
-    this.view,
-    this.title,
-    this.icon,
-    this.leading,
-    this.onTap
-  });
+  SettingsModel(
+      {this.trailing,
+      this.view,
+      this.title,
+      this.icon,
+      this.leading,
+      this.onTap});
 }
+
+// class ProfileSettingsModel {
+  
+// }

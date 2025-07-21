@@ -10,6 +10,7 @@ import 'package:se7ety/core/constants/specialisation.dart';
 import 'package:se7ety/core/functions/dialogs.dart';
 import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/services/local_storage.dart';
+import 'package:se7ety/core/services/user_services.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/bottom_navigation_button.dart';
@@ -17,7 +18,7 @@ import 'package:se7ety/core/widgets/custom_text_form_field.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_event.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_state.dart';
-import 'package:se7ety/feature/doctor/home/home_view.dart';
+import 'package:se7ety/feature/doctor/doctor_nav_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DocRegistrationView extends StatefulWidget {
@@ -28,7 +29,7 @@ class DocRegistrationView extends StatefulWidget {
 }
 
 class _DocRegistrationViewState extends State<DocRegistrationView> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _docRegistrationKey = GlobalKey<FormState>();
   String _specialisation = specialisation[0];
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -56,18 +57,17 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
   }
 
   Future<String?> uploadToCloudinary(File imageFile) async {
-    final cloudName = 'dvhb0hsj3';
-    final uploadPreset = 'unsigned_pfp';
+    const cloudName = 'dvhb0hsj3';
+    const uploadPreset = 'unsigned_pfp';
     final uri = Uri.parse(
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
     );
 
-    final request =
-        http.MultipartRequest('POST', uri)
-          ..fields['upload_preset'] = uploadPreset
-          ..files.add(
-            await http.MultipartFile.fromPath('file', imageFile.path),
-          );
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = uploadPreset
+      ..files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
 
     final response = await request.send();
 
@@ -94,7 +94,6 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('إكمال عملية التسجيل')),
-
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoadingState) {
@@ -105,7 +104,11 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
           } else if (state is AuthSuccessState) {
             Navigator.pop(context);
             showSuccessDialog(context, 'تم حفظ البيانات بنجاح');
-            pushAndRemoveUntil(context, DoctorHomeView());
+            pushAndRemoveUntil(
+                context,
+                const DoctorNavBar(
+                  page: 0,
+                ));
           }
         },
         child: SingleChildScrollView(
@@ -113,7 +116,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
             padding: const EdgeInsets.all(20),
             child: Center(
               child: Form(
-                key: _formKey,
+                key: _docRegistrationKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -124,11 +127,14 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                         showPfpBottomSheet(context, (File imageFile) async {
                           // Upload image to Cloudinary
                           final imageUrl = await uploadToCloudinary(imageFile);
+
                           if (imageUrl != null) {
                             setState(() {
                               _avatarImageUrl = imageUrl;
                             });
                           } else {
+                            if (!mounted) return;
+                            // ignore: use_build_context_synchronously
                             showErrorDialog(context, 'فشل في رفع الصورة');
                           }
                         });
@@ -138,10 +144,10 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                         children: [
                           CircleAvatar(
                             radius: 60,
-                            backgroundImage:
-                                _avatarImageUrl.isNotEmpty
-                                    ? NetworkImage(_avatarImageUrl)
-                                    : AssetImage(AssetsManager.doctor),
+                            backgroundImage: _avatarImageUrl.isNotEmpty
+                                ? NetworkImage(_avatarImageUrl)
+                                : const AssetImage(AssetsManager.doctor)
+                                    as ImageProvider,
                           ),
                           CircleAvatar(
                             radius: 15,
@@ -184,27 +190,26 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                       child: DropdownButton(
                         isExpanded: true,
                         iconEnabledColor: AppColors.color1,
-                        icon: Icon(Icons.expand_circle_down_outlined),
+                        icon: const Icon(Icons.expand_circle_down_outlined),
                         value: _specialisation,
                         onChanged: (String? newValue) {
                           setState(() {
                             _specialisation = newValue ?? specialisation[0];
                           });
                         },
-                        items:
-                            specialisation.map((element) {
-                              return DropdownMenuItem(
-                                value: element,
-                                child: Text(element),
-                              );
-                            }).toList(),
+                        items: specialisation.map((element) {
+                          return DropdownMenuItem(
+                            value: element,
+                            child: Text(element),
+                          );
+                        }).toList(),
                       ),
                     ),
                     const Gap(10),
 
                     // -------------------- نبذة تعريفية -------------------- //
                     Padding(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       child: Row(
                         children: [
                           Text(
@@ -232,9 +237,9 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                     ),
 
                     // -------------------- عنوان العيادة -------------------- //
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: const Divider(),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Divider(),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
@@ -280,7 +285,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                       children: [
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
                             child: Row(
                               children: [
                                 Text(
@@ -296,7 +301,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                         ),
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
                             child: Row(
                               children: [
                                 Text(
@@ -321,7 +326,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                             onTap: showStartTimePicker,
                             readOnly: true,
                             hintText: '9:00 ص',
-                            suffixIcon: Icon(Icons.watch_later_outlined),
+                            suffixIcon: const Icon(Icons.watch_later_outlined),
                             validator: (value) {
                               if (value!.isEmpty) {
                                 return 'من فضلك اختر وقت البدء';
@@ -338,7 +343,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                             onTap: showEndTimePicker,
                             readOnly: true,
                             hintText: '5:00 م',
-                            suffixIcon: Icon(Icons.watch_later_outlined),
+                            suffixIcon: const Icon(Icons.watch_later_outlined),
                             validator: (value) {
                               if (value!.isEmpty) {
                                 return 'من فضلك اختر وقت الانتهاء';
@@ -405,24 +410,24 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
       bottomNavigationBar: BottomNavigationButton(
         text: 'التسجيل',
         onPressed: () {
-          if (_formKey.currentState!.validate()) {
+          if (_docRegistrationKey.currentState!.validate()) {
             if (_avatarImageUrl.isEmpty) {
               showErrorDialog(context, 'يجب رفع صورة شخصية قبل التسجيل');
               return;
             }
             context.read<AuthBloc>().add(
-              DocRegistrationEvent(
-                context: context,
-                imageUrl: _avatarImageUrl,
-                specialisation: _specialisation,
-                startTime: _startTimeController.text,
-                endTime: _endTimeController.text,
-                address: _addressController.text,
-                phone1: _phone1Controller.text,
-                phone2: _phone2Controller.text,
-                bio: _bioController.text,
-              ),
-            );
+                  DocRegistrationEvent(
+                    context: context,
+                    imageUrl: _avatarImageUrl,
+                    specialisation: _specialisation,
+                    startTime: _startTimeController.text,
+                    endTime: _endTimeController.text,
+                    address: _addressController.text,
+                    phone1: _phone1Controller.text,
+                    phone2: _phone2Controller.text,
+                    bio: _bioController.text,
+                  ),
+                );
           }
         },
       ),
@@ -459,6 +464,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
       if (picked.hour < _startTimePicked!.hour ||
           picked.hour == _startTimePicked!.hour &&
               picked.minute == _startTimePicked!.minute) {
+        if (!mounted) return;
         showErrorDialog(context, 'وقت الانتهاء يجب أن يكون بعد وقت البدء');
         return;
       }

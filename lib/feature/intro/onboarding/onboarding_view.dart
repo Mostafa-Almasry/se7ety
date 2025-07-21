@@ -32,7 +32,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                 key: AppLocalStorage.isOnboardingShown,
                 value: true,
               );
-              pushReplacement(context, WelcomeView());
+              pushReplacement(context, const WelcomeView());
             },
             child: Text('تخطي', style: getBodyStyle(color: AppColors.color1)),
           ),
@@ -83,7 +83,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                   SmoothPageIndicator(
                     controller: pageController,
                     count: pages.length,
-                    effect: WormEffect(
+                    effect: const WormEffect(
                       dotHeight: 8,
                       dotWidth: 16,
                       activeDotColor: AppColors.color1,
@@ -102,7 +102,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                           key: AppLocalStorage.isOnboardingShown,
                           value: true,
                         );
-                        pushReplacement(context, WelcomeView());
+                        pushReplacement(context, const WelcomeView());
                       },
                     ),
                   },

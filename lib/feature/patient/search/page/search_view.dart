@@ -40,7 +40,7 @@ class _SearchViewState extends State<SearchView> {
               controller: _controller,
               isSearch: true,
               hintText: 'البحث',
-              suffixIcon: Icon(Icons.search),
+              suffixIcon: const Icon(Icons.search),
               onChanged: (searchKey) {
                 setState(() {
                   search = searchKey;

@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:se7ety/core/enum/profile_fields_enum.dart';
 import 'package:se7ety/core/enum/user_type_enum.dart';
 import 'package:se7ety/core/functions/dialogs.dart';
 import 'package:se7ety/core/services/local_storage.dart';
+import 'package:se7ety/core/services/user_services.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_event.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_state.dart';
 
@@ -40,6 +42,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           event.age,
           event.context,
         );
+      } else if (event is ReauthenticateUserEvent) {
+        await reauthenticateUser(event, event.currentPassword, emit);
       }
     });
   }
@@ -47,11 +51,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> register(RegisterEvent event, Emitter<AuthState> emit) async {
     emit(AuthLoadingState());
     try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: event.email,
-            password: event.password,
-          );
+      final credential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: event.email,
+        password: event.password,
+      );
 
       User? user = credential.user;
       user?.updateDisplayName(event.name);
@@ -63,31 +67,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             .collection("patients")
             .doc(user?.uid)
             .set({
-              'uid': user?.uid,
-              'name': event.name,
-              'email': event.email,
-              'age': '',
-              'image': '',
-            });
+          'uid': user?.uid,
+          'name': event.name,
+          'email': event.email,
+          'age': '',
+          'image': '',
+        });
       } else {
         await FirebaseFirestore.instance
             .collection("doctors")
             .doc(user?.uid)
             .set({
-              'uid': user?.uid,
-              'name': event.name,
-              'email': event.email,
-              'image': '',
-              'specialisation': '',
-              'bio': '',
-              'openHour': '',
-              'closeHour': '',
-              'address': '',
-              'phone1': '',
-              'phone2': '',
-              'createdAt': '',
-              'rating': 0,
-            });
+          'uid': user?.uid,
+          'name': event.name,
+          'email': event.email,
+          'image': '',
+          'specialisation': '',
+          'bio': '',
+          'openHour': '',
+          'closeHour': '',
+          'address': '',
+          'phone1': '',
+          'phone2': '',
+          'createdAt': '',
+          'rating': 0,
+        });
       }
 
       await AppLocalStorage.cacheData(
@@ -136,11 +140,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         key: AppLocalStorage.userType,
         value: event.userType.name,
       );
-      final doc =
-          await FirebaseFirestore.instance
-              .collection('patients')
-              .doc(credential.user?.uid)
-              .get();
+      final doc = await FirebaseFirestore.instance
+          .collection('patients')
+          .doc(credential.user?.uid)
+          .get();
       final userName = doc.data()?['name'] ?? '';
 
       await AppLocalStorage.cacheData(
@@ -205,6 +208,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         'bio': bio,
         'createdAt': FieldValue.serverTimestamp(),
       });
+      updateLocalUserDetails(
+          field: ProfileFieldsEnum.bio,
+          newValue: bio,
+          userType: UserType.doctor);
+      updateLocalUserDetails(
+          field: ProfileFieldsEnum.phone,
+          newValue: phone1,
+          userType: UserType.doctor);
+      updateLocalUserDetails(
+          field: ProfileFieldsEnum.phone2,
+          newValue: phone2,
+          userType: UserType.doctor);
+      updateLocalUserDetails(
+          field: ProfileFieldsEnum.address,
+          newValue: address,
+          userType: UserType.doctor);
 
       emit(AuthSuccessState());
     } catch (e) {
@@ -257,6 +276,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthSuccessState());
     } catch (e) {
       showErrorDialog(context, 'حدث خطأ أثناء الحفظ: $e');
+    }
+  }
+
+  Future<bool> reauthenticateUser(ReauthenticateUserEvent event,
+      String currentPassword, Emitter<AuthState> emit) async {
+    try {
+      emit(AuthLoadingState());
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null || user.email == null) {
+        throw FirebaseAuthException(
+            code: 'user-not-found',
+            message: 'لا يوجد مستخدم مسجّل الدخول حالياً');
+      }
+
+      final credential = EmailAuthProvider.credential(
+          email: user.email!, password: currentPassword);
+      await user.reauthenticateWithCredential(credential);
+      emit(CheckPasswordConfirmedState());
+      return true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        emit(CheckPasswordErrorState(message: 'wrong-password'));
+        return false; // the password is wrong!
+      } else {
+        emit(CheckPasswordErrorState(message: 'كلمة المرور غير صحيحة'));
+        rethrow; // any other error
+      }
     }
   }
 }

@@ -5,31 +5,27 @@ import 'package:se7ety/core/enum/user_type_enum.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/feature/appointments/appointments_view.dart';
-import 'package:se7ety/feature/patient/home/presentation/page/patient_home_view.dart';
-import 'package:se7ety/feature/patient/search/page/search_view.dart';
 import 'package:se7ety/feature/profile/profile_view.dart';
 import 'package:se7ety/feature/settings/presentation/cubit/settings_cubit.dart';
 
-class PatientNavBar extends StatefulWidget {
-  const PatientNavBar({super.key, required this.page});
+class DoctorNavBar extends StatefulWidget {
+  const DoctorNavBar({super.key, required this.page});
   final int page;
 
   @override
-  State<PatientNavBar> createState() => _PatientNavBarState();
+  State<DoctorNavBar> createState() => _PatientNavBarState();
 }
 
-class _PatientNavBarState extends State<PatientNavBar> {
+class _PatientNavBarState extends State<DoctorNavBar> {
   int _selectedIndex = 0;
   final List _pages = [
-    const PatientHomeView(), // Home Screen
-    const SearchView(searchKey: ''), // Search View
     const AppointmentsView(
-      userType: UserType.patient,
+      userType: UserType.doctor,
     ), // My Appointments
     BlocProvider(
       create: (context) => SettingsCubit(),
       child: const ProfileView(
-        userType: UserType.patient,
+        userType: UserType.doctor,
       ),
     ), // Profile
   ];
@@ -74,8 +70,6 @@ class _PatientNavBarState extends State<PatientNavBar> {
           tabBackgroundColor: AppColors.color1,
           textStyle: getBodyStyle(color: AppColors.white),
           tabs: const [
-            GButton(iconSize: 28, icon: Icons.home, text: 'الرئيسية'),
-            GButton(icon: Icons.search, text: 'البحث'),
             GButton(
               iconSize: 28,
               icon: Icons.calendar_month_rounded,

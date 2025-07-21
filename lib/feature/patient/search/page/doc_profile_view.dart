@@ -25,7 +25,7 @@ class _DocProfileViewState extends State<DocProfileView> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          padding: EdgeInsets.only(right: 10),
+          padding: const EdgeInsets.only(right: 10),
           icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -145,7 +145,7 @@ class _DocProfileViewState extends State<DocProfileView> {
                     ],
                   ),
                 ),
-                Divider(),
+                const Divider(),
                 const Gap(25),
 
                 //--------------------- معلومات الاتصال --------------------- //

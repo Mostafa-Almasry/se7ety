@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:se7ety/core/constants/assets_manager.dart';
+import 'package:se7ety/core/enum/user_type_enum.dart';
 import 'package:se7ety/core/services/local_storage.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
@@ -16,11 +17,13 @@ class AppointmentsList extends StatefulWidget {
     this.padding,
     this.showPastAppointments = false,
     this.scrollable = true,
+    required this.userType,
   });
 
   final EdgeInsetsGeometry? padding;
   final bool showPastAppointments;
   final bool scrollable;
+  final UserType userType;
   @override
   State<AppointmentsList> createState() => _AppointmentsListState();
 }
@@ -58,38 +61,35 @@ class _AppointmentsListState extends State<AppointmentsList> {
   void confirmDelete(String id) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog.adaptive(
-            title: const Text('حذف الحجز'),
-            content: Text('هل متأكد أنك تريد حذف الحجز؟'),
-            actions: [
-              TextButton(
-                style: TextButton.styleFrom(
-                  // side: BorderSide(color: Colors.grey),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  backgroundColor: AppColors.color1,
-                ),
-                onPressed: () => Navigator.pop(context),
-                child: Text('لا', style: getBodyStyle(color: AppColors.white)),
+      builder: (context) => AlertDialog.adaptive(
+        title: const Text('حذف الحجز'),
+        content: const Text('هل متأكد أنك تريد حذف الحجز؟'),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  // side: BorderSide(color: Colors.grey),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  backgroundColor: AppColors.redColor,
-                ),
-                onPressed: () async {
-                  await deleteAppointment(id);
-                  Navigator.pop(context);
-                },
-                child: Text('نعم', style: getBodyStyle(color: AppColors.white)),
-              ),
-            ],
+              backgroundColor: AppColors.color1,
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: Text('لا', style: getBodyStyle(color: AppColors.white)),
           ),
+          TextButton(
+            style: TextButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              backgroundColor: AppColors.redColor,
+            ),
+            onPressed: () async {
+              await deleteAppointment(id);
+              Navigator.pop(context);
+            },
+            child: Text('نعم', style: getBodyStyle(color: AppColors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -101,30 +101,42 @@ class _AppointmentsListState extends State<AppointmentsList> {
     String? uid = AppLocalStorage.getData(key: AppLocalStorage.uid);
     if (uid == null || uid.isEmpty) {
       // Show a loading indicator first, then error if still null after a short delay
-      return FutureBuilder(
-        future: Future.delayed(const Duration(milliseconds: 300)),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return Center(
-            child: Text(
-              'حدث خطأ في بيانات المستخدم',
-              style: getBodyStyle().copyWith(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
+      return Scaffold(
+        appBar: AppBar(title: const Text('مواعيد الحجز')),
+        body: FutureBuilder(
+          future: Future.delayed(const Duration(milliseconds: 300)),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return Center(
+              child: Text(
+                'حدث خطأ في بيانات المستخدم',
+                style: getBodyStyle().copyWith(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     }
-    final appointmentsStream =
-        FirebaseFirestore.instance
-            .collection('appointments')
-            .where('patientID', isEqualTo: uid)
-            .orderBy('date', descending: false)
-            .snapshots();
+
+    final Stream<QuerySnapshot> appointmentsStream;
+    if (widget.userType == UserType.patient) {
+      appointmentsStream = FirebaseFirestore.instance
+          .collection('appointments')
+          .where('patientID', isEqualTo: uid)
+          .orderBy('date', descending: false)
+          .snapshots();
+    } else {
+      appointmentsStream = FirebaseFirestore.instance
+          .collection('appointments')
+          .where('doctorID', isEqualTo: uid)
+          .orderBy('date', descending: false)
+          .snapshots();
+    }
 
     return SafeArea(
       child: StreamBuilder<QuerySnapshot>(
@@ -141,13 +153,12 @@ class _AppointmentsListState extends State<AppointmentsList> {
           }
           final docs = snapshot.data!.docs;
 
-          final filteredDocs =
-              widget.showPastAppointments
-                  ? docs.toList()
-                  : docs.where((doc) {
-                    final dateTime = (doc['date'] as Timestamp).toDate();
-                    return !isExpired(dateTime);
-                  }).toList();
+          final filteredDocs = widget.showPastAppointments
+              ? docs.toList()
+              : docs.where((doc) {
+                  final dateTime = (doc['date'] as Timestamp).toDate();
+                  return !isExpired(dateTime);
+                }).toList();
 
           // Sort (really cool method!)
           filteredDocs.sort((a, b) {
@@ -180,10 +191,9 @@ class _AppointmentsListState extends State<AppointmentsList> {
           }
           return ListView.builder(
             shrinkWrap: true,
-            physics:
-                widget.scrollable
-                    ? AlwaysScrollableScrollPhysics()
-                    : NeverScrollableScrollPhysics(),
+            physics: widget.scrollable
+                ? const AlwaysScrollableScrollPhysics()
+                : const NeverScrollableScrollPhysics(),
             itemCount: filteredDocs.length,
             itemBuilder: (BuildContext context, int index) {
               final doc = filteredDocs[index];
@@ -197,12 +207,14 @@ class _AppointmentsListState extends State<AppointmentsList> {
                   ),
                   color: AppColors.accentColor,
                   child: ExpansionTile(
-                    shape: RoundedRectangleBorder(side: BorderSide.none),
-                    title: Text('د. ${doc['doctor']}', style: getTitleStyle()),
+                    shape: const RoundedRectangleBorder(side: BorderSide.none),
+                    title: widget.userType == UserType.patient
+                        ? Text('د. ${doc['doctor']}', style: getTitleStyle())
+                        : Text('data', style: getTitleStyle()),
                     subtitle: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Gap(10),
+                        const Gap(10),
                         Row(
                           children: [
                             const Icon(
@@ -255,21 +267,37 @@ class _AppointmentsListState extends State<AppointmentsList> {
                         ),
                         child: Column(
                           children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on_outlined,
-                                  color: AppColors.color1,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    doc['location'] ?? 'لا يوجد عنوان',
-                                    style: getBodyStyle(),
+                            widget.userType == UserType.patient
+                                ? Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        color: AppColors.color1,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          doc['location'] ?? 'لا يوجد عنوان',
+                                          style: getBodyStyle(),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.description_outlined,
+                                        color: AppColors.color1,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          doc['description'] ?? 'لا يوجد وصف',
+                                          style: getBodyStyle(),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
                             const Gap(10),
                             CustomButton(
                               text:
@@ -279,24 +307,6 @@ class _AppointmentsListState extends State<AppointmentsList> {
                                 confirmDelete(doc.id);
                               },
                             ),
-
-                            // if (!isExpired(dateTime)) ...[
-                            //   const Gap(10),
-                            //   CustomButton(
-                            //     text: 'الغاء الحجز',
-                            //     color: AppColors.redColor,
-                            //     onPressed: () {
-                            //      confirmDelete(doc.id);
-                            //     },
-                            //   ),
-                            // ] else ...[
-                            //   const Gap(10),
-                            //   CustomButton(
-                            //     text: 'حذف',
-                            //     color: AppColors.redColor,
-                            //     onPressed: () {},
-                            //   ),
-                            // ],
                             const Gap(8),
                           ],
                         ),

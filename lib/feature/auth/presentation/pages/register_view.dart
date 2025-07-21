@@ -25,7 +25,7 @@ class RegisterView extends StatefulWidget {
 }
 
 class _RegisterViewState extends State<RegisterView> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _registerKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -54,7 +54,7 @@ class _RegisterViewState extends State<RegisterView> {
               pushAndRemoveUntil(context, const DocRegistrationView());
             } else {
               // change to patient view.
-              pushAndRemoveUntil(context, const PatientNavBar());
+              pushAndRemoveUntil(context, const PatientNavBar(page: 0,));
             }
           }
         },
@@ -64,7 +64,7 @@ class _RegisterViewState extends State<RegisterView> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Form(
-                key: _formKey,
+                key: _registerKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -80,7 +80,7 @@ class _RegisterViewState extends State<RegisterView> {
                       controller: _nameController,
                       textAlign: TextAlign.end,
 
-                      prefixIcon: Icon(Icons.person),
+                      prefixIcon: const Icon(Icons.person),
                       hintText: 'الاسم',
                     ),
                     const Gap(20),
@@ -88,7 +88,7 @@ class _RegisterViewState extends State<RegisterView> {
                       hintText: 'Mostafa@example.com',
                       textAlign: TextAlign.end,
                       controller: _emailController,
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: const Icon(Icons.email),
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const Gap(20),
@@ -97,8 +97,8 @@ class _RegisterViewState extends State<RegisterView> {
                       hintText: '********',
                       textAlign: TextAlign.end,
 
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: Icon(Icons.visibility),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: const Icon(Icons.visibility),
                       isPassword: true,
                       keyboardType: TextInputType.visiblePassword,
                     ),
@@ -107,7 +107,7 @@ class _RegisterViewState extends State<RegisterView> {
                     CustomButton(
                       text: 'تسجيل حساب',
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
+                        if (_registerKey.currentState!.validate()) {
                           //if all fields are validated and validator returns true(valid), Do Register logic..
                           context.read<AuthBloc>().add(
                             RegisterEvent(

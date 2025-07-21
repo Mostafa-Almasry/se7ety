@@ -23,7 +23,7 @@ class BookingView extends StatefulWidget {
 }
 
 class _BookingViewState extends State<BookingView> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _bookingKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
@@ -54,7 +54,8 @@ class _BookingViewState extends State<BookingView> {
 
     _dateController.text = "";
 
-    final savedName = AppLocalStorage.getData(key: AppLocalStorage.userName);
+    final savedName =
+        AppLocalStorage.getData(key: AppLocalStorage.userName) as String?;
     if (savedName != null && savedName.isNotEmpty) {
       _nameController.text = savedName;
     } else {
@@ -82,7 +83,7 @@ class _BookingViewState extends State<BookingView> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          padding: EdgeInsets.only(right: 10),
+          padding: const EdgeInsets.only(right: 10),
           icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -92,7 +93,7 @@ class _BookingViewState extends State<BookingView> {
         child: Padding(
           padding: const EdgeInsets.all(15), // Standardise
           child: Form(
-            key: _formKey,
+            key: _bookingKey,
             child: Column(
               children: [
                 Stack(
@@ -120,31 +121,30 @@ class _BookingViewState extends State<BookingView> {
                                     radius: 50,
                                     backgroundColor: AppColors.white,
                                     child: ClipOval(
-                                      child:
-                                          (widget.doctor?.image != null)
-                                              ? Hero(
-                                                tag:
-                                                    'doctor-${widget.doctor?.uid}-image',
-                                                child: Image.network(
-                                                  widget.doctor!.image!,
-                                                  width: 120,
-                                                  height: 120,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              )
-                                              : SvgPicture.asset(
-                                                AssetsManager.doctor,
+                                      child: (widget.doctor?.image != null)
+                                          ? Hero(
+                                              tag:
+                                                  'doctor-${widget.doctor?.uid}-image',
+                                              child: Image.network(
+                                                widget.doctor!.image!,
                                                 width: 120,
                                                 height: 120,
                                                 fit: BoxFit.cover,
                                               ),
+                                            )
+                                          : SvgPicture.asset(
+                                              AssetsManager.doctor,
+                                              width: 120,
+                                              height: 120,
+                                              fit: BoxFit.cover,
+                                            ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          SizedBox(width: 30),
+                          const SizedBox(width: 30),
 
                           //--------------------- Quick Overview ---------------------
                           Expanded(
@@ -261,7 +261,7 @@ class _BookingViewState extends State<BookingView> {
 
                 // -------------------- وصف الحالة -------------------- //
                 Padding(
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   child: Row(
                     children: [
                       Text(
@@ -307,7 +307,7 @@ class _BookingViewState extends State<BookingView> {
                 CustomTextFormField(
                   hintText: 'اختر تاريخ الحجز',
                   controller: _dateController,
-                  suffixIcon: Icon(
+                  suffixIcon: const Icon(
                     Icons.date_range_outlined,
                     color: AppColors.white,
                   ),
@@ -340,36 +340,34 @@ class _BookingViewState extends State<BookingView> {
                 ),
                 Wrap(
                   spacing: 8,
-                  children:
-                      times.map((hour) {
-                        return ChoiceChip(
-                          label: Text(
-                            "${hour.toString().padLeft(2, '0')}:00",
-                            style: TextStyle(
-                              color:
-                                  hour == selectedIndex
-                                      ? AppColors.white
-                                      : AppColors.black,
-                            ),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: const BorderSide(
-                              color: Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                          backgroundColor: AppColors.accentColor,
-                          selectedColor: AppColors.color1,
-                          selected: hour == selectedIndex,
-                          onSelected: (selected) {
-                            setState(() {
-                              selectedIndex = hour;
-                              bookedHour = hour;
-                            });
-                          },
-                        );
-                      }).toList(),
+                  children: times.map((hour) {
+                    return ChoiceChip(
+                      label: Text(
+                        "${hour.toString().padLeft(2, '0')}:00",
+                        style: TextStyle(
+                          color: hour == selectedIndex
+                              ? AppColors.white
+                              : AppColors.black,
+                        ),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: const BorderSide(
+                          color: Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      backgroundColor: AppColors.accentColor,
+                      selectedColor: AppColors.color1,
+                      selected: hour == selectedIndex,
+                      onSelected: (selected) {
+                        setState(() {
+                          selectedIndex = hour;
+                          bookedHour = hour;
+                        });
+                      },
+                    );
+                  }).toList(),
                 ),
               ],
             ),
@@ -379,21 +377,21 @@ class _BookingViewState extends State<BookingView> {
       bottomNavigationBar: BottomNavigationButton(
         text: 'تأكيد الحجز',
         onPressed: () {
-          if (_formKey.currentState!.validate()) {
+          if (_bookingKey.currentState!.validate()) {
             if (selectedIndex == -1) {
-              return showErrorDialog(context, 'من فضلك اختر وقت الحجز');
+              showErrorDialog(context, 'من فضلك اختر وقت الحجز');
+              return;
             } else {
               createAppointment();
               showDialog(
                 context: context,
-                builder:
-                    (context) => CustomAlertDialog(
-                      title: 'تم تسجيل الحجز',
-                      ok: 'اضغط للانتقال',
-                      onPressed: () {
-                        pushAndRemoveUntil(context, const PatientNavBar());
-                      },
-                    ),
+                builder: (context) => CustomAlertDialog(
+                  title: 'تم تسجيل الحجز',
+                  ok: 'اضغط للانتقال',
+                  onPressed: () {
+                    pushAndRemoveUntil(context, const PatientNavBar(page: 0,));
+                  },
+                ),
               );
             }
           }

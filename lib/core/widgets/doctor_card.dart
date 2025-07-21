@@ -41,7 +41,7 @@ class DoctorCard extends StatelessWidget {
       child: InkWell(
         onTap: () async {
           FocusScope.of(context).unfocus();
-          await Future.delayed(Duration(milliseconds: 150));
+          await Future.delayed(const Duration(milliseconds: 150));
           push(context, DocProfileView(doctor: doctor));
         },
         child: Row(
@@ -90,7 +90,7 @@ class DoctorCard extends StatelessWidget {
               children: [
                 Text(doctor.rating.toString(), style: getBodyStyle()),
                 const SizedBox(width: 3),
-                Icon(Icons.star_rate_rounded, size: 20, color: Colors.orange),
+                const Icon(Icons.star_rate_rounded, size: 20, color: Colors.orange),
               ],
             ),
           ],

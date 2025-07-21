@@ -23,7 +23,7 @@ class PhoneTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(number.toString(), style: getBodyStyle()),
-            Icon(Icons.phone),
+            const Icon(Icons.phone),
           ],
         ),
       ),

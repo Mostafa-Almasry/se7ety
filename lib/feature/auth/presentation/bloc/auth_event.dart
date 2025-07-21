@@ -70,3 +70,12 @@ class PatientProfileUpdateEvent extends AuthEvent {
     this.age,
   });
 }
+
+class ReauthenticateUserEvent extends AuthEvent {
+  final BuildContext context;
+
+  final String currentPassword;
+
+  ReauthenticateUserEvent(
+      {required this.context, required this.currentPassword});
+}

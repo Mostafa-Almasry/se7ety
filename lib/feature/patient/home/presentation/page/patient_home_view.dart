@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:se7ety/core/functions/navigation.dart';
+import 'package:se7ety/core/services/local_storage.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/custom_text_form_field.dart';
@@ -17,21 +17,10 @@ class PatientHomeView extends StatefulWidget {
 }
 
 class _PatientHomeViewState extends State<PatientHomeView> {
-  User? user;
   final TextEditingController _searchController = TextEditingController();
 
-  Future<void> _getUser() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    setState(() {
-      user = currentUser;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _getUser();
-  }
+  final userName =
+      AppLocalStorage.getData(key: AppLocalStorage.userName) as String?;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +29,7 @@ class _PatientHomeViewState extends State<PatientHomeView> {
         actions: [
           IconButton(
             onPressed: () {},
-            icon: Icon(
+            icon: const Icon(
               Icons.notifications_active_rounded,
               color: AppColors.titleColor,
             ),
@@ -54,13 +43,15 @@ class _PatientHomeViewState extends State<PatientHomeView> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Align(
                 alignment: Alignment.centerRight,
                 child: Text.rich(
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   TextSpan(
                     children: [
                       TextSpan(
@@ -71,7 +62,7 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                         ),
                       ),
                       TextSpan(
-                        text: user?.displayName ?? '',
+                        text: userName ?? '',
                         style: getBodyStyle(
                           color: AppColors.color1,
                           fontSize: 20,
@@ -94,7 +85,7 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                     BoxShadow(
                       color: AppColors.black.withOpacity(0.1),
                       blurRadius: 6,
-                      offset: Offset(5, 5),
+                      offset: const Offset(5, 5),
                     ),
                   ],
                 ),
@@ -114,7 +105,7 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                           SearchView(searchKey: _searchController.text),
                         );
                       },
-                      icon: Icon(Icons.search, color: AppColors.white),
+                      icon: const Icon(Icons.search, color: AppColors.white),
                     ),
                   ),
                 ),
@@ -122,10 +113,10 @@ class _PatientHomeViewState extends State<PatientHomeView> {
               const Gap(30),
 
               // --------------------  التخصصات -------------------- //
-              SpecialisationBanner(),
-              Gap(10),
+              const SpecialisationBanner(),
+              const Gap(10),
               // --------------------  الأعلي تقييماََ -------------------- //
-              TopRatedWidget(),
+              const TopRatedWidget(),
             ],
           ),
         ),

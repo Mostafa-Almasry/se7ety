@@ -27,7 +27,7 @@ class _SplashViewState extends State<SplashView> {
     final isLoggedIn = await AppLocalStorage.getData(key: AppLocalStorage.uid);
     final isOnboardingShown =
         await AppLocalStorage.getData(key: AppLocalStorage.isOnboardingShown) ??
-        false;
+            false;
     final userType = await AppLocalStorage.getData(
       key: AppLocalStorage.userType,
     );
@@ -44,24 +44,26 @@ class _SplashViewState extends State<SplashView> {
       return;
     } // to make sure not to cause errors if the user navigates while in the delay of the async funtion
 
-    // Forcing logout for debugging
-    // if the widget is no longer mounted..
-    await AppLocalStorage.removeData(key: AppLocalStorage.uid);
-    Future.delayed(Duration(milliseconds: 2000));
+    // // Forcing logout for debugging
+    // // if the widget is no longer mounted..
+    // await AppLocalStorage.removeData(key: AppLocalStorage.uid);
+    // Future.delayed(const Duration(milliseconds: 2000));
 
     if (isLoggedIn != null) {
       if (userType == 'doctor') {
-        // Navigate to proper screen where user is logged in
-
-        pushReplacement(context, DocRegistrationView());
+        pushReplacement(context, const DocRegistrationView());
       } else {
-        pushReplacement(context, PatientNavBar());
+        pushReplacement(
+            context,
+            const PatientNavBar(
+              page: 0,
+            ));
       }
     } else {
       if (isOnboardingShown) {
-        pushReplacement(context, WelcomeView());
+        pushReplacement(context, const WelcomeView());
       } else {
-        pushReplacement(context, OnboardingView());
+        pushReplacement(context, const OnboardingView());
       }
     }
   }

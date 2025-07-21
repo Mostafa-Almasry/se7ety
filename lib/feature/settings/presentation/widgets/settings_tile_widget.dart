@@ -13,18 +13,23 @@ class SettingsTileWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 13, 0, 0),
       child: ListTile(
-        contentPadding: EdgeInsets.all(8),
+        contentPadding: const EdgeInsets.all(8),
         onTap: () {
           if (model.onTap != null) {
-            model.onTap;
-          } else {
-            push(context, model.view ?? Placeholder());
+            model.onTap!();
+          } else if (model.view != null) {
+            push(context, model.view!);
           }
         },
-        leading: model.leading ?? Icon(model.icon),
-        title: Text(model.title ?? '', style: getBodyStyle()),
+        leading: Padding(
+          padding: const EdgeInsets.all(2),
+          child:
+              model.leading ?? (model.icon != null ? Icon(model.icon) : null),
+        ),
+        title: Text((model.title ?? '').toString(), style: getBodyStyle()),
         tileColor: AppColors.accentColor,
-        trailing: model.trailing ?? Icon(Icons.arrow_forward_ios_outlined),
+        trailing:
+            model.trailing ?? const Icon(Icons.arrow_forward_ios_outlined),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
     );

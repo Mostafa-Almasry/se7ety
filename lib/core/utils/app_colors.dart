@@ -10,5 +10,5 @@ class AppColors {
   static const Color redColor = Color(0xffe8504f);
   static const Color titleColor = Color(0xFF353750);
   static final Color lightBlue = Colors.blue[50]!;
-  static final Color iconBgColor = Color.fromARGB(255, 199, 213, 232);
+  static const Color iconBgColor = Color.fromARGB(255, 199, 213, 232);
 }
