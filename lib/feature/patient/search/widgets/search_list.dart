@@ -7,8 +7,14 @@ import 'package:se7ety/core/widgets/doctor_card.dart';
 import 'package:se7ety/feature/auth/data/model/doctor_model.dart';
 
 class SearchList extends StatefulWidget {
-  const SearchList({super.key, required this.searchKey});
+  const SearchList(
+      {super.key,
+      required this.searchKey,
+      required this.where,
+      required this.isSpecialisationSearch});
   final String searchKey;
+  final String where;
+  final bool isSpecialisationSearch;
 
   @override
   State<SearchList> createState() => _SearchListState();
@@ -20,13 +26,16 @@ class _SearchListState extends State<SearchList> {
     final searchKeyLower = widget.searchKey.toLowerCase();
 
     return StreamBuilder<QuerySnapshot>(
-      stream:
-          FirebaseFirestore.instance
+      stream: widget.searchKey == ''
+          ? FirebaseFirestore.instance
+              .collection('doctors')
+              .where('specialisation', isEqualTo: widget.where)
+              .snapshots()
+          : FirebaseFirestore.instance
               .collection('doctors')
               .orderBy('name')
-              .startAt([searchKeyLower])
-              .endAt(['$searchKeyLower\uf8ff'])
-              .snapshots(),
+              .startAt([searchKeyLower]).endAt(
+                  ['$searchKeyLower\uf8ff']).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting ||
             !snapshot.hasData) {
@@ -35,7 +44,7 @@ class _SearchListState extends State<SearchList> {
 
         final doctors = snapshot.data!.docs;
 
-        if (doctors.isEmpty) {
+        if (doctors.isEmpty && searchKeyLower.isNotEmpty) {
           return Center(
             child: SingleChildScrollView(
               child: Column(
@@ -43,7 +52,22 @@ class _SearchListState extends State<SearchList> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SvgPicture.asset(AssetsManager.noSearch, width: 250),
-                  Text('لا يوجد دكتور بهذا الاسم', style: getBodyStyle()),
+                  widget.isSpecialisationSearch
+                      ? Text('لا يوجد دكتور بهذا التخصص', style: getBodyStyle())
+                      : Text('لا يوجد دكتور بهذا الاسم', style: getBodyStyle()),
+                ],
+              ),
+            ),
+          );
+        } else if (doctors.isEmpty && searchKeyLower.isEmpty) {
+          return Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(AssetsManager.noSearch, width: 250),
+                  Text(' ابدأ بالكتابة للبحث عن دكتور', style: getBodyStyle())
                 ],
               ),
             ),

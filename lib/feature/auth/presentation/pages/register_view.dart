@@ -108,7 +108,7 @@ class _RegisterViewState extends State<RegisterView> {
                       text: 'تسجيل حساب',
                       onPressed: () {
                         if (_registerKey.currentState!.validate()) {
-                          //if all fields are validated and validator returns true(valid), Do Register logic..
+                          // If all fields are validated and validator returns true(valid), Do Register logic..
                           context.read<AuthBloc>().add(
                             RegisterEvent(
                               name: _nameController.text,

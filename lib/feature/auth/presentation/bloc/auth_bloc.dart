@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:se7ety/core/enum/profile_fields_enum.dart';
@@ -61,7 +64,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       user?.updateDisplayName(event.name);
 
       // FireStore
-
       if (event.userType == UserType.patient) {
         await FirebaseFirestore.instance
             .collection("patients")
@@ -108,7 +110,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         value: event.name,
       );
 
-      emit(AuthSuccessState());
+      await saveFcmToken(user!.uid, event.userType);
+
+      emit(AuthSuccessState(userType: event.userType));
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
         emit(AuthErrorState('كلمة المرور ضعيفة'));
@@ -118,7 +122,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthErrorState('حدث خطأ ما'));
       }
     } catch (e) {
-      print('Unexpected error: $e');
+      log('Unexpected error: $e');
       emit(AuthErrorState('حدث خطأ غير متوقع'));
     }
   }
@@ -131,38 +135,49 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
 
-      await AppLocalStorage.cacheData(
-        key: AppLocalStorage.uid,
-        value: credential.user?.uid,
-      );
+      final uid = credential.user?.uid;
+      if (uid == null) {
+        emit(AuthErrorState('حدث خطأ ما'));
+        return;
+      }
 
-      await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userType,
-        value: event.userType.name,
-      );
-      final doc = await FirebaseFirestore.instance
+      // Try finding user in patients
+      final patientDoc = await FirebaseFirestore.instance
           .collection('patients')
-          .doc(credential.user?.uid)
+          .doc(uid)
           .get();
-      final userName = doc.data()?['name'] ?? '';
 
+      UserType userType;
+      String userName = '';
+
+      if (patientDoc.exists) {
+        userType = UserType.patient;
+        userName = patientDoc.data()?['name'] ?? '';
+      } else {
+        // If not in patients, try doctors
+        final doctorDoc = await FirebaseFirestore.instance
+            .collection('doctors')
+            .doc(uid)
+            .get();
+
+        if (doctorDoc.exists) {
+          userType = UserType.doctor;
+          userName = doctorDoc.data()?['name'] ?? '';
+        } else {
+          emit(AuthErrorState('لم يتم العثور على المستخدم في قاعدة البيانات'));
+          return;
+        }
+      }
+
+      await AppLocalStorage.cacheData(key: AppLocalStorage.uid, value: uid);
       await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userName,
-        value: userName,
-      );
+          key: AppLocalStorage.userType, value: userType.name);
+      await AppLocalStorage.cacheData(
+          key: AppLocalStorage.userName, value: userName);
 
-      // await AppLocalStorage.cacheData(
-      //   key: AppLocalStorage.userAddress,
-      //   value:
-      //       (await FirebaseFirestore.instance
-      //               .collection('patients')
-      //               .doc(credential.user?.uid)
-      //               .get())
-      //           .data()?['address'] ??
-      //       '',
-      // );
+      await saveFcmToken(uid, userType);
 
-      emit(AuthSuccessState());
+      emit(AuthSuccessState(userType: userType));
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         emit(AuthErrorState('لم يتم العثور علي مستخدم بهذا الايميل'));
@@ -172,7 +187,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthErrorState('حدث خطأ ما'));
       }
     } catch (e) {
-      print(e);
+      log('$e');
+      emit(AuthErrorState('حدث خطأ غير متوقع'));
     }
   }
 
@@ -180,7 +196,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     DocRegistrationEvent event,
     Emitter<AuthState> emit,
     String imageUrl,
-    dynamic specialisation,
+    String specialisation,
     String startTime,
     String endTime,
     String address,
@@ -210,22 +226,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       });
       updateLocalUserDetails(
           field: ProfileFieldsEnum.bio,
-          newValue: bio,
+          newValue: event.bio,
           userType: UserType.doctor);
       updateLocalUserDetails(
           field: ProfileFieldsEnum.phone,
-          newValue: phone1,
+          newValue: event.phone1,
           userType: UserType.doctor);
       updateLocalUserDetails(
           field: ProfileFieldsEnum.phone2,
-          newValue: phone2,
+          newValue: event.phone2,
           userType: UserType.doctor);
       updateLocalUserDetails(
           field: ProfileFieldsEnum.address,
-          newValue: address,
+          newValue: event.address,
           userType: UserType.doctor);
-
-      emit(AuthSuccessState());
+      AppLocalStorage.cacheData(
+          key: AppLocalStorage.isSignupComplete, value: true);
+      emit(AuthSuccessState(userType: UserType.doctor));
     } catch (e) {
       showErrorDialog(context, 'حدث خطأ أثناء الحفظ: $e');
     }
@@ -249,33 +266,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
     try {
-      await FirebaseFirestore.instance.collection('patients').doc(uid).update({
-        'image': imageUrl,
-        'age': age,
-        'address': address,
-        'phone': phone,
-        'name': name,
-      });
-      await AppLocalStorage.cacheData(
-        key: AppLocalStorage.imageUrl,
-        value: imageUrl,
-      );
-      await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userName,
-        value: name,
-      );
-      await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userAddress,
-        value: address,
-      );
-      await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userPhone,
-        value: phone,
-      );
+      final updateData = <String, dynamic>{};
 
-      emit(AuthSuccessState());
-    } catch (e) {
-      showErrorDialog(context, 'حدث خطأ أثناء الحفظ: $e');
+      if (imageUrl != null) updateData['image'] = imageUrl;
+      if (age != null) updateData['age'] = age;
+      if (address != null) updateData['address'] = address;
+      if (phone != null) updateData['phone'] = phone;
+      if (name != null) updateData['name'] = name;
+
+      // Perform a single Firestore update
+      await FirebaseFirestore.instance
+          .collection('patients')
+          .doc(uid)
+          .update(updateData);
+
+      // Update all relevant local storage values at once
+      await Future.wait<void>([
+      if (imageUrl != null)
+        AppLocalStorage.cacheData(
+            key: AppLocalStorage.imageUrl, value: imageUrl),
+      if (name != null)
+        AppLocalStorage.cacheData(
+            key: AppLocalStorage.userName, value: name),
+      if (address != null)
+        AppLocalStorage.cacheData(
+            key: AppLocalStorage.userAddress, value: address),
+      if (phone != null)
+        AppLocalStorage.cacheData(
+            key: AppLocalStorage.userPhone, value: phone),
+    ]);
+      // Add this to update UI immediately
+      emit(ProfileUpdateSuccessState(
+          imageUrl: imageUrl, name: name, address: address, phone: phone));
+    } catch (e, stack) {
+      log('Patient profile update error: $e', stackTrace: stack);
+      showErrorDialog(context, 'حدث خطأ أثناء الحفظ: ${e.toString()}');
+      emit(AuthErrorState('حدث خطأ أثناء الحفظ'));
     }
   }
 
@@ -304,6 +330,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(CheckPasswordErrorState(message: 'كلمة المرور غير صحيحة'));
         rethrow; // any other error
       }
+    }
+  }
+
+  Future<void> saveFcmToken(String uid, UserType userType) async {
+    final token = await FirebaseMessaging.instance.getToken();
+    final collection = userType == UserType.doctor ? 'doctors' : 'patients';
+    if (token != null) {
+      FirebaseFirestore.instance
+          .collection(collection)
+          .doc(uid)
+          .update({'FcmToken': token});
     }
   }
 }

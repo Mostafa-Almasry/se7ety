@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -21,13 +23,11 @@ class _TopRatedWidgetState extends State<TopRatedWidget> {
         children: [
           Text('الأعلي تقييماََ', style: getTitleStyle()),
           const Gap(10),
-
           FutureBuilder(
-            future:
-                FirebaseFirestore.instance
-                    .collection('doctors')
-                    .orderBy('rating', descending: true)
-                    .get(),
+            future: FirebaseFirestore.instance
+                .collection('doctors')
+                .orderBy('rating', descending: true)
+                .get(),
             // initialData: InitialData,
             builder: (
               BuildContext context,
@@ -54,12 +54,12 @@ class _TopRatedWidgetState extends State<TopRatedWidget> {
                     final doctor = DoctorModel.fromJson(
                       snapshot.data!.docs[index].data(),
                     );
-                    print('✅ Loaded doctor: ${doctor.name}');
-                    print('🖼️ doctor.image = ${doctor.image}');
+                    // log('Loaded doctor: ${doctor.name}');
+                    // log('doctor.image = ${doctor.image}');
 
                     return DoctorCard(doctor: doctor);
                   } catch (e) {
-                    print('❌ Error parsing doctor at index $index: $e');
+                    log('❌ Error parsing doctor at index $index: $e');
                     return const SizedBox();
                   }
                 },

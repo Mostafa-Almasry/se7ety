@@ -57,7 +57,6 @@ showEditSettingsDialog({
   required ProfileFieldsEnum field,
   required TextEditingController fieldcontroller,
 }) {
-  // final fieldText = field.toString();
   final TextEditingController fieldController = fieldcontroller;
   String arabicfield = '';
   if (field == ProfileFieldsEnum.name) {
@@ -80,7 +79,9 @@ showEditSettingsDialog({
               controller: fieldController,
               hintText: 'ادخل $arabicfield الجديد',
               autoFocus: true,
-              inputFormatters: [LengthLimitingTextInputFormatter(20)],
+              inputFormatters: field == ProfileFieldsEnum.name
+                  ? [LengthLimitingTextInputFormatter(20)]
+                  : [LengthLimitingTextInputFormatter(40)],
             ),
             actions: [
               TextButton(
@@ -105,17 +106,19 @@ showEditSettingsDialog({
                   final newValue = fieldController.text.trim();
                   try {
                     if (newValue.isNotEmpty) {
-                      // Use Cubit for update so UI refreshes instantly
-                      BlocProvider.of<SettingsCubit>(blocContext).updateField(
+                      showLoadingDialog(context);
+                      await BlocProvider.of<SettingsCubit>(blocContext)
+                          .updateField(
                         field: field,
                         newValue: newValue,
                         userType: userType,
                       );
+                      Navigator.pop(context); // Close loading dialog
+                      Navigator.pop(context); // Close edit dialog
                     }
                   } catch (e) {
-                    showErrorDialog(context, '$e');
-                  } finally {
                     Navigator.pop(context);
+                    showErrorDialog(context, '$e');
                   }
                 },
                 child: Text('حفظ', style: getBodyStyle(color: AppColors.white)),

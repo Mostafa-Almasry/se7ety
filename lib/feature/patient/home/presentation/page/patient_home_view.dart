@@ -84,7 +84,8 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.black.withOpacity(0.1),
-                      blurRadius: 6,
+                      blurRadius: 7,
+                      // spreadRadius: 1,
                       offset: const Offset(5, 5),
                     ),
                   ],

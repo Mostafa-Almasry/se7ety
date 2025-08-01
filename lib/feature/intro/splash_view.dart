@@ -3,6 +3,7 @@ import 'package:se7ety/core/constants/assets_manager.dart';
 import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/services/local_storage.dart';
 import 'package:se7ety/feature/auth/presentation/pages/doc_registration_view.dart';
+import 'package:se7ety/feature/doctor/doctor_nav_bar.dart';
 import 'package:se7ety/feature/intro/onboarding/onboarding_view.dart';
 import 'package:se7ety/feature/intro/welcome_view.dart';
 import 'package:se7ety/feature/patient/patient_nav_bar.dart';
@@ -28,17 +29,12 @@ class _SplashViewState extends State<SplashView> {
     final isOnboardingShown =
         await AppLocalStorage.getData(key: AppLocalStorage.isOnboardingShown) ??
             false;
+    final isSignupComplete =
+        await AppLocalStorage.getData(key: AppLocalStorage.isSignupComplete) ??
+            false;
+
     final userType = await AppLocalStorage.getData(
       key: AppLocalStorage.userType,
-    );
-    final userImage = await AppLocalStorage.getData(
-      key: AppLocalStorage.imageUrl,
-    );
-    final userAddress = await AppLocalStorage.getData(
-      key: AppLocalStorage.userAddress,
-    );
-    print(
-      'DEBUG: isLoggedIn=$isLoggedIn, userType=$userType, isOnboardingShown=$isOnboardingShown, userImage=$userImage, userAddress =$userAddress',
     );
     if (!mounted) {
       return;
@@ -51,7 +47,11 @@ class _SplashViewState extends State<SplashView> {
 
     if (isLoggedIn != null) {
       if (userType == 'doctor') {
-        pushReplacement(context, const DocRegistrationView());
+        if (isSignupComplete) {
+          pushReplacement(context, const DoctorNavBar(page: 0));
+        } else {
+          pushReplacement(context, const DocRegistrationView());
+        }
       } else {
         pushReplacement(
             context,

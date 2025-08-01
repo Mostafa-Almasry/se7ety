@@ -17,7 +17,7 @@ import 'package:se7ety/feature/patient/patient_nav_bar.dart';
 
 class BookingView extends StatefulWidget {
   const BookingView({super.key, required this.doctor});
-  final DoctorModel? doctor;
+  final DoctorModel doctor;
   @override
   State<BookingView> createState() => _BookingViewState();
 }
@@ -38,8 +38,8 @@ class _BookingViewState extends State<BookingView> {
   void getAvailableTimes(DateTime selectedDate) {
     final newTimes = getAvailableAppointments(
       selectedDate,
-      widget.doctor?.openHour ?? '',
-      widget.doctor?.closeHour ?? '',
+      widget.doctor.openHour,
+      widget.doctor.closeHour,
     );
     setState(() {
       times = newTimes;
@@ -52,6 +52,9 @@ class _BookingViewState extends State<BookingView> {
     final now = DateTime.now();
     getAvailableTimes(now);
 
+    _phoneController.text =
+        AppLocalStorage.getData(key: AppLocalStorage.userPhone) ?? '';
+
     _dateController.text = "";
 
     final savedName =
@@ -62,11 +65,13 @@ class _BookingViewState extends State<BookingView> {
       // For users that have been registered without their names being cached
       final uid = AppLocalStorage.getData(key: AppLocalStorage.uid);
       if (uid != null) {
-        FirebaseFirestore.instance.collection('patients').doc(uid).get().then((
-          doc,
-        ) {
-          final fetchedName = doc.data()?['name'];
-          if (fetchedName != null) {
+        FirebaseFirestore.instance
+            .collection('patients')
+            .doc(uid)
+            .get()
+            .then((doc) {
+          final fetchedName = doc.data()?['name'] ?? ''; // Handle null
+          if (fetchedName.isNotEmpty) {
             _nameController.text = fetchedName;
             AppLocalStorage.cacheData(
               key: AppLocalStorage.userName,
@@ -121,12 +126,12 @@ class _BookingViewState extends State<BookingView> {
                                     radius: 50,
                                     backgroundColor: AppColors.white,
                                     child: ClipOval(
-                                      child: (widget.doctor?.image != null)
+                                      child: (widget.doctor.image.isNotEmpty)
                                           ? Hero(
                                               tag:
-                                                  'doctor-${widget.doctor?.uid}-image',
+                                                  'doctor-${widget.doctor.uid}-image',
                                               child: Image.network(
-                                                widget.doctor!.image!,
+                                                widget.doctor.image,
                                                 width: 120,
                                                 height: 120,
                                                 fit: BoxFit.cover,
@@ -153,14 +158,14 @@ class _BookingViewState extends State<BookingView> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  ' د. ${widget.doctor?.name ?? ''}',
+                                  ' د. ${widget.doctor.name}',
                                   style: getTitleStyle(),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const Gap(3),
                                 Text(
-                                  widget.doctor?.specialisation ?? '',
+                                  widget.doctor.specialisation,
                                   style: getBodyStyle(
                                     fontWeight: FontWeight.normal,
                                   ),
@@ -169,7 +174,7 @@ class _BookingViewState extends State<BookingView> {
                                 Row(
                                   children: [
                                     Text(
-                                      widget.doctor?.rating.toString() ?? '0',
+                                      widget.doctor.rating.toString() 
                                     ),
                                     const SizedBox(width: 3),
                                     const Icon(
@@ -228,8 +233,7 @@ class _BookingViewState extends State<BookingView> {
                   },
                 ),
                 const Gap(
-                  10,
-                ), // -------------------- رقم الهاتف -------------------- //
+                    10), // -------------------- رقم الهاتف -------------------- //
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
@@ -389,7 +393,11 @@ class _BookingViewState extends State<BookingView> {
                   title: 'تم تسجيل الحجز',
                   ok: 'اضغط للانتقال',
                   onPressed: () {
-                    pushAndRemoveUntil(context, const PatientNavBar(page: 0,));
+                    pushAndRemoveUntil(
+                        context,
+                        const PatientNavBar(
+                          page: 0,
+                        ));
                   },
                 ),
               );
@@ -421,27 +429,33 @@ class _BookingViewState extends State<BookingView> {
   }
 
   Future<void> createAppointment() async {
-    if (selectedDay != null && bookedHour != null) {
-      final fullDateTime = DateTime(
-        selectedDay!.year,
-        selectedDay!.month,
-        selectedDay!.day,
-        bookedHour!,
-        0, // minutes
-      );
-
-      await FirebaseFirestore.instance.collection('appointments').add({
-        'patientID': await AppLocalStorage.getData(key: AppLocalStorage.uid),
-        'doctorID': widget.doctor?.uid,
-        'name': _nameController.text,
-        'phone': _phoneController.text,
-        'description': _descriptionController.text,
-        'doctor': widget.doctor?.name,
-        'location': widget.doctor?.address,
-        'date': fullDateTime,
-        'status': 'pending', // or confirmed / completed
-        'rating': null,
-      });
+    if (selectedDay == null || bookedHour == null) {
+      throw Exception('Missing appointment time');
     }
+
+    final patientId = await AppLocalStorage.getData(key: AppLocalStorage.uid);
+    if (patientId == null) {
+      throw Exception('Patient not logged in');
+    }
+
+    final fullDateTime = DateTime(
+      selectedDay!.year,
+      selectedDay!.month,
+      selectedDay!.day,
+      bookedHour!,
+      0,
+    );
+    await FirebaseFirestore.instance.collection('appointments').add({
+      'patientID': patientId,
+      'doctorID': widget.doctor.uid,
+      'name': _nameController.text,
+      'phone': _phoneController.text,
+      'description': _descriptionController.text,
+      'doctor': widget.doctor.name ?? '',
+      'location': widget.doctor.address ?? '',
+      'date': fullDateTime,
+      'status': 'pending',
+      'rating': null,
+    });
   }
 }

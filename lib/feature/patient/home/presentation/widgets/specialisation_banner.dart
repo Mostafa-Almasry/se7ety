@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:gap/gap.dart';
 import 'package:se7ety/core/constants/assets_manager.dart';
+import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/feature/patient/home/data/card.dart';
+import 'package:se7ety/feature/patient/home/presentation/page/specialisation_search_view.dart';
 
 // Row(children: [Text('التخصصات', style: getTitleStyle())]),
 // const Gap(10),
@@ -27,7 +29,12 @@ class SpecialisationBanner extends StatelessWidget {
             itemCount: cards.length,
             itemBuilder: (BuildContext context, int index) {
               return GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  push(
+                      context,
+                      SpecialisationSearchView(
+                          selectedSpecilisation: cards[index].specialisation));
+                },
                 child: ItemCardWidget(
                   cardBgColor: cards[index].cardBgColor,
                   lightColor: cards[index].cardLightColor,
@@ -35,8 +42,7 @@ class SpecialisationBanner extends StatelessWidget {
                 ),
               );
             },
-          ), // mostafaelmareed@gmail.com
-          //12345678
+          ),
         ),
       ],
     );
@@ -60,7 +66,6 @@ class ItemCardWidget extends StatelessWidget {
     return Container(
       height: 200,
       width: 150,
-
       margin: const EdgeInsets.only(left: 15, bottom: 15, top: 10),
       decoration: BoxDecoration(
         color: cardBgColor,
@@ -89,7 +94,6 @@ class ItemCardWidget extends StatelessWidget {
                 SvgPicture.asset(AssetsManager.doctorCard, width: 140),
                 const Gap(15),
                 Text(
-                  textAlign: TextAlign.center, // useless?
                   title,
                   style: getSmallStyle(color: AppColors.white),
                 ),

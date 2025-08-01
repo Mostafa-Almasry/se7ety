@@ -58,13 +58,27 @@ class DoctorCard extends StatelessWidget {
                 ),
                 child: Hero(
                   tag: 'doctor-${doctor.uid}-image',
-                  child: Image.network(
-                    fixedImageUrl(doctor.image ?? '') ??
-                        AssetsManager.doctorCard,
-                    height: 50,
-                    width: 50,
-                    fit: BoxFit.contain,
-                  ),
+                  child: doctor.image == null || doctor.image!.trim().isEmpty
+                      ? Image.asset(
+                          AssetsManager.doctor,
+                          height: 50,
+                          width: 50,
+                          fit: BoxFit.contain,
+                        )
+                      : Image.network(
+                          fixedImageUrl(doctor.image!)!,
+                          height: 50,
+                          width: 50,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              AssetsManager.doctor,
+                              height: 50,
+                              width: 50,
+                              fit: BoxFit.contain,
+                            );
+                          },
+                        ),
                 ),
               ),
             ),
@@ -90,7 +104,8 @@ class DoctorCard extends StatelessWidget {
               children: [
                 Text(doctor.rating.toString(), style: getBodyStyle()),
                 const SizedBox(width: 3),
-                const Icon(Icons.star_rate_rounded, size: 20, color: Colors.orange),
+                const Icon(Icons.star_rate_rounded,
+                    size: 20, color: Colors.orange),
               ],
             ),
           ],

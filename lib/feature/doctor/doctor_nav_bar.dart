@@ -54,15 +54,16 @@ class _PatientNavBarState extends State<DoctorNavBar> {
             topRight: Radius.circular(20),
           ),
           boxShadow: [
-            BoxShadow(blurRadius: 20, color: Colors.black.withOpacity(.2)),
+            BoxShadow(blurRadius: 15, color: Colors.black.withOpacity(.2)),
           ],
         ),
         child: GNav(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           curve: Curves.easeOutExpo,
           rippleColor: AppColors.grey,
           hoverColor: AppColors.grey,
           haptic: true,
-          gap: 5,
+          gap: 0,
           activeColor: AppColors.white,
           tabBorderRadius: 20,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

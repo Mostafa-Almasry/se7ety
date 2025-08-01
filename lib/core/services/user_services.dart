@@ -28,17 +28,24 @@ Future<void> updateLocalUserDetails(
     default:
       fieldText = 'name';
   }
+
+  final col = userType == UserType.patient ? 'patients' : 'doctors';
+
   final uid =
       await AppLocalStorage.getData(key: AppLocalStorage.uid) as String?;
+  if (uid == null) throw Exception('No UID in local storage');
   await FirebaseFirestore.instance
-      .collection('patients')
+      .collection(col)
       .doc(uid)
       .update({fieldText: newValue});
-  await AppLocalStorage.cacheData(key: fieldText, value: newValue);
-  final getName =
-      await FirebaseFirestore.instance.collection('patients').doc(uid).get();
-  String getString = getName.toString();
-  print(
-      '$getString -00000000000000000000000000000000000000000-293468590268-35');
+  final storageKey = {
+    ProfileFieldsEnum.name: AppLocalStorage.userName,
+    ProfileFieldsEnum.address: AppLocalStorage.userAddress,
+    ProfileFieldsEnum.phone: AppLocalStorage.userPhone,
+    ProfileFieldsEnum.age: AppLocalStorage.userAge,
+    ProfileFieldsEnum.bio: AppLocalStorage.userBio,
+  }[field]!; 
+  // Map each enum to the corresponding SharedPreferences key
+    // so we update the local cache under the correct storage constant.
+  await AppLocalStorage.cacheData(key: storageKey, value: newValue);
 }
-// '${userType.toString()}s'

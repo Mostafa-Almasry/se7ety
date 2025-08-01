@@ -3,14 +3,12 @@ import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 
 class PhoneTile extends StatelessWidget {
-  const PhoneTile({super.key, required this.number, this.onTap});
+  const PhoneTile({super.key, required this.number});
   final int number;
-  final void Function()? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(right: 16),
         height: 45,

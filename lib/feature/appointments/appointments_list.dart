@@ -37,7 +37,7 @@ class _AppointmentsListState extends State<AppointmentsList> {
     return formatted.replaceAll('AM', 'ص').replaceAll('PM', 'م');
   }
 
-  // Check if the appointment isn't pending (expired)
+  // Check if the appointment isn't expired
   bool isExpired(DateTime date) {
     final now = DateTime.now();
     return now.difference(date).inHours > 2;
@@ -84,7 +84,7 @@ class _AppointmentsListState extends State<AppointmentsList> {
             ),
             onPressed: () async {
               await deleteAppointment(id);
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
             },
             child: Text('نعم', style: getBodyStyle(color: AppColors.white)),
           ),
@@ -93,14 +93,19 @@ class _AppointmentsListState extends State<AppointmentsList> {
     );
   }
 
+  // NEW: Safe document field access
+  String _getField(DocumentSnapshot doc, String field, [String fallback = '']) {
+    return (doc[field]?.toString() ?? fallback).trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (user == null) {
       return const Center(child: Text('لم يتم تسجيل الدخول'));
     }
+
     String? uid = AppLocalStorage.getData(key: AppLocalStorage.uid);
     if (uid == null || uid.isEmpty) {
-      // Show a loading indicator first, then error if still null after a short delay
       return Scaffold(
         appBar: AppBar(title: const Text('مواعيد الحجز')),
         body: FutureBuilder(
@@ -123,20 +128,14 @@ class _AppointmentsListState extends State<AppointmentsList> {
       );
     }
 
-    final Stream<QuerySnapshot> appointmentsStream;
-    if (widget.userType == UserType.patient) {
-      appointmentsStream = FirebaseFirestore.instance
-          .collection('appointments')
-          .where('patientID', isEqualTo: uid)
-          .orderBy('date', descending: false)
-          .snapshots();
-    } else {
-      appointmentsStream = FirebaseFirestore.instance
-          .collection('appointments')
-          .where('doctorID', isEqualTo: uid)
-          .orderBy('date', descending: false)
-          .snapshots();
-    }
+    final Stream<QuerySnapshot> appointmentsStream = FirebaseFirestore.instance
+        .collection('appointments')
+        .where(
+          widget.userType == UserType.patient ? 'patientID' : 'doctorID',
+          isEqualTo: uid,
+        )
+        .orderBy('date', descending: false)
+        .snapshots();
 
     return SafeArea(
       child: StreamBuilder<QuerySnapshot>(
@@ -148,36 +147,7 @@ class _AppointmentsListState extends State<AppointmentsList> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData) {
-            return const Center(child: Text('لا يوجد بيانات'));
-          }
-          final docs = snapshot.data!.docs;
-
-          final filteredDocs = widget.showPastAppointments
-              ? docs.toList()
-              : docs.where((doc) {
-                  final dateTime = (doc['date'] as Timestamp).toDate();
-                  return !isExpired(dateTime);
-                }).toList();
-
-          // Sort (really cool method!)
-          filteredDocs.sort((a, b) {
-            // Convert to dart date
-            final aDate = (a['date'] as Timestamp).toDate();
-            final bDate = (b['date'] as Timestamp).toDate();
-            // Check each one for expiration
-            final aExpired = isExpired(aDate);
-            final bExpired = isExpired(bDate);
-            // If they're both expired or if they both aren't
-            if (aExpired == bExpired) {
-              return aDate.compareTo(bDate); // earlier first
-            }
-            // If one is expired and thye other isn't:
-            // if a is the one that's expired make it 1 in order, if not, the opposite
-            return aExpired ? 1 : -1; // expired go after upcoming
-          });
-
-          if (filteredDocs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -189,6 +159,36 @@ class _AppointmentsListState extends State<AppointmentsList> {
               ),
             );
           }
+
+          final docs = snapshot.data!.docs;
+
+          // NEW: Safe filtering and sorting
+          final filteredDocs = docs.where((doc) {
+            final dateField = doc['date'];
+            if (dateField == null) return false;
+
+            try {
+              final dateTime = (dateField as Timestamp).toDate();
+              return widget.showPastAppointments || !isExpired(dateTime);
+            } catch (e) {
+              return false;
+            }
+          }).toList();
+
+          // Sort with null safety
+          filteredDocs.sort((a, b) {
+            final aDate = (a['date'] as Timestamp?)?.toDate();
+            final bDate = (b['date'] as Timestamp?)?.toDate();
+
+            if (aDate == null || bDate == null) return 0;
+
+            final aExpired = isExpired(aDate);
+            final bExpired = isExpired(bDate);
+
+            if (aExpired == bExpired) return aDate.compareTo(bDate);
+            return aExpired ? 1 : -1;
+          });
+
           return ListView.builder(
             shrinkWrap: true,
             physics: widget.scrollable
@@ -197,7 +197,17 @@ class _AppointmentsListState extends State<AppointmentsList> {
             itemCount: filteredDocs.length,
             itemBuilder: (BuildContext context, int index) {
               final doc = filteredDocs[index];
-              final dateTime = (doc['date'] as Timestamp).toDate();
+              final dateField = doc['date'];
+              DateTime? dateTime;
+
+              // NEW: Safe date handling
+              if (dateField is Timestamp) {
+                dateTime = dateField.toDate();
+              }
+
+              // Skip invalid documents
+              if (dateTime == null) return const SizedBox.shrink();
+
               return Padding(
                 padding:
                     widget.padding ?? const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -208,9 +218,12 @@ class _AppointmentsListState extends State<AppointmentsList> {
                   color: AppColors.accentColor,
                   child: ExpansionTile(
                     shape: const RoundedRectangleBorder(side: BorderSide.none),
+                    // NEW: Use safe field access
                     title: widget.userType == UserType.patient
-                        ? Text('د. ${doc['doctor']}', style: getTitleStyle())
-                        : Text('data', style: getTitleStyle()),
+                        ? Text('د. ${_getField(doc, 'doctor', 'غير معروف')}',
+                            style: getTitleStyle())
+                        : Text(_getField(doc, 'name', 'غير معروف'),
+                            style: getTitleStyle()),
                     subtitle: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -277,7 +290,9 @@ class _AppointmentsListState extends State<AppointmentsList> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          doc['location'] ?? 'لا يوجد عنوان',
+                                          // NEW: Safe field access
+                                          _getField(
+                                              doc, 'location', 'لا يوجد عنوان'),
                                           style: getBodyStyle(),
                                         ),
                                       ),
@@ -292,7 +307,9 @@ class _AppointmentsListState extends State<AppointmentsList> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          doc['description'] ?? 'لا يوجد وصف',
+                                          // NEW: Safe field access
+                                          _getField(doc, 'description',
+                                              'لا يوجد وصف'),
                                           style: getBodyStyle(),
                                         ),
                                       ),
@@ -303,9 +320,7 @@ class _AppointmentsListState extends State<AppointmentsList> {
                               text:
                                   !isExpired(dateTime) ? 'الغاء الحجز' : 'حذف',
                               color: AppColors.redColor,
-                              onPressed: () {
-                                confirmDelete(doc.id);
-                              },
+                              onPressed: () => confirmDelete(doc.id),
                             ),
                             const Gap(8),
                           ],

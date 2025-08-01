@@ -3,11 +3,15 @@ import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 
 class TileWidget extends StatelessWidget {
-  const TileWidget({super.key, required this.icon, required this.text});
+  const TileWidget(
+      {super.key,
+      required this.icon,
+      required this.text,
+      this.showActionIcon = false});
 
   final IconData icon;
   final String text;
-
+  final bool showActionIcon;
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -29,6 +33,12 @@ class TileWidget extends StatelessWidget {
             style: getBodyStyle(fontWeight: FontWeight.normal, fontSize: 18),
           ),
         ),
+        if (showActionIcon) // Only show if true
+          const Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Colors.grey,
+          ),
       ],
     );
   }

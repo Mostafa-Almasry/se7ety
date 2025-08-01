@@ -12,8 +12,8 @@ import 'package:se7ety/core/widgets/custom_text_form_field.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_event.dart';
 import 'package:se7ety/feature/auth/presentation/bloc/auth_state.dart';
-import 'package:se7ety/feature/auth/presentation/pages/doc_registration_view.dart';
 import 'package:se7ety/feature/auth/presentation/pages/register_view.dart';
+import 'package:se7ety/feature/doctor/doctor_nav_bar.dart';
 import 'package:se7ety/feature/patient/patient_nav_bar.dart';
 
 // accounts:
@@ -53,10 +53,10 @@ class _LoginViewState extends State<LoginView> {
           } else if (state is AuthSuccessState) {
             Navigator.pop(context);
             showSuccessDialog(context, 'تم تسجيل الدخول بنجاح');
-            if (widget.userType == UserType.doctor) {
-              pushAndRemoveUntil(context, const DocRegistrationView());
+            if (state.userType == UserType.doctor) {
+              pushAndRemoveUntil(context, const DoctorNavBar(page: 0));
             } else {
-              pushAndRemoveUntil(context, const PatientNavBar(page: 0,));
+              pushAndRemoveUntil(context, const PatientNavBar(page: 0));
             }
           }
         },
@@ -81,7 +81,6 @@ class _LoginViewState extends State<LoginView> {
                     CustomTextFormField(
                       hintText: 'Mostafa@example.com',
                       textAlign: TextAlign.end,
-
                       controller: _emailController,
                       prefixIcon: const Icon(Icons.email),
                       keyboardType: TextInputType.emailAddress,
@@ -115,12 +114,11 @@ class _LoginViewState extends State<LoginView> {
                           // If all fields are valid, Do the login logic..
 
                           context.read<AuthBloc>().add(
-                            LoginEvent(
-                              email: _emailController.text,
-                              password: _passwordController.text,
-                              userType: widget.userType,
-                            ),
-                          );
+                                LoginEvent(
+                                  email: _emailController.text,
+                                  password: _passwordController.text,
+                                ),
+                              );
                         }
                       },
                       radius: 25,

@@ -69,7 +69,7 @@ class _PatientNavBarState extends State<PatientNavBar> {
           gap: 5,
           activeColor: AppColors.white,
           tabBorderRadius: 20,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           duration: const Duration(milliseconds: 300),
           tabBackgroundColor: AppColors.color1,
           textStyle: getBodyStyle(color: AppColors.white),

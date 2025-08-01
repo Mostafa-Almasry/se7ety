@@ -15,7 +15,13 @@ class WelcomeView extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          Image.asset(AssetsManager.welcomeBg),
+          Image.asset(
+            AssetsManager.welcomeBg,
+            fit: BoxFit.cover,
+            height: double.infinity,
+            width: double.infinity,
+            alignment: Alignment.center,
+          ),
           PositionedDirectional(
             top: 100,
             start: 25,
@@ -59,7 +65,8 @@ class WelcomeView extends StatelessWidget {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          push(context, const LoginView(userType: UserType.doctor));
+                          push(context,
+                              const LoginView(userType: UserType.doctor));
                         },
                         child: Container(
                           height: 70,
@@ -78,7 +85,8 @@ class WelcomeView extends StatelessWidget {
                       const Gap(15),
                       GestureDetector(
                         onTap: () {
-                          push(context, const LoginView(userType: UserType.patient));
+                          push(context,
+                              const LoginView(userType: UserType.patient));
                         },
                         child: Container(
                           height: 70,

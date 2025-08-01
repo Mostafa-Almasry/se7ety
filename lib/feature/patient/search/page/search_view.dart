@@ -51,6 +51,8 @@ class _SearchViewState extends State<SearchView> {
             Expanded(
               child: SearchList(
                 searchKey: search,
+                where: 'name',
+                isSpecialisationSearch: false,
               ),
             ),
           ],

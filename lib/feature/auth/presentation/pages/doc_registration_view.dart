@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:http/http.dart' as http;
@@ -10,7 +12,6 @@ import 'package:se7ety/core/constants/specialisation.dart';
 import 'package:se7ety/core/functions/dialogs.dart';
 import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/services/local_storage.dart';
-import 'package:se7ety/core/services/user_services.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
 import 'package:se7ety/core/widgets/bottom_navigation_button.dart';
@@ -40,20 +41,13 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
   TimeOfDay? _startTimePicked;
   TimeOfDay? _endTimePicked;
   String _avatarImageUrl = '';
+  bool isFirstPhoneNumber = false;
 
   @override
   void initState() {
     super.initState();
     _startTimeController.text = '';
     _endTimeController.text = '';
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // TimeOfDay now = TimeOfDay.now();
-    // _startTime = now.format(context);
-    // _endTime = now.format(context);
   }
 
   Future<String?> uploadToCloudinary(File imageFile) async {
@@ -85,9 +79,34 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
       await prefs.setString(AppLocalStorage.imageUrl, imageUrl);
       return imageUrl;
     } else {
-      print('Failed to upload image: ${response.statusCode}');
+      log('Failed to upload image: ${response.statusCode}');
       return null;
     }
+  }
+
+  String? validatePhone(String? value) {
+    if (isFirstPhoneNumber) {
+      if (value == null || value.trim().isEmpty) {
+        return 'من فضلك ادخل رقم الهاتف';
+      }
+
+      final trimmed = value.trim();
+
+      if (!RegExp(r'^\d{9,15}$').hasMatch(trimmed)) {
+        return 'ادخل رقم هاتف صالح';
+      }
+
+      return null;
+    } else {
+      if (value != null && value.trim().isNotEmpty) {
+        final trimmed = value.trim();
+
+        if (!RegExp(r'^\d{9,15}$').hasMatch(trimmed)) {
+          return 'ادخل رقم هاتف صالح';
+        }
+      }
+    }
+    return null;
   }
 
   @override
@@ -120,7 +139,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Gap(20),
+                    const Gap(10),
                     // -------------------- الصورة الشخصية -------------------- //
                     GestureDetector(
                       onTap: () {
@@ -371,16 +390,15 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                       ),
                     ),
                     CustomTextFormField(
-                      hintText: '20xxxxxxxxxxx+',
-                      controller: _phone1Controller,
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'يجب ادخال رقم الهاتف للتواصل';
-                        }
-                        return null;
-                      },
-                    ),
+                        hintText: '20xxxxxxxxxxx+',
+                        controller: _phone1Controller,
+                        keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                        ],
+                        validator: validatePhone),
+                    const Gap(10),
+
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Row(
@@ -396,10 +414,13 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                       ),
                     ),
                     CustomTextFormField(
-                      controller: _phone2Controller,
-                      hintText: '20xxxxxxxxxxx+',
-                      keyboardType: TextInputType.phone,
-                    ),
+                        controller: _phone2Controller,
+                        hintText: '20xxxxxxxxxxx+',
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                        ],
+                        keyboardType: TextInputType.phone,
+                        validator: validatePhone),
                   ],
                 ),
               ),
