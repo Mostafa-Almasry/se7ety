@@ -58,7 +58,7 @@ class DoctorCard extends StatelessWidget {
                 ),
                 child: Hero(
                   tag: 'doctor-${doctor.uid}-image',
-                  child: doctor.image == null || doctor.image!.trim().isEmpty
+                  child: doctor.image.trim().isEmpty
                       ? Image.asset(
                           AssetsManager.doctor,
                           height: 50,
@@ -66,7 +66,7 @@ class DoctorCard extends StatelessWidget {
                           fit: BoxFit.contain,
                         )
                       : Image.network(
-                          fixedImageUrl(doctor.image!)!,
+                          fixedImageUrl(doctor.image)!,
                           height: 50,
                           width: 50,
                           fit: BoxFit.contain,
