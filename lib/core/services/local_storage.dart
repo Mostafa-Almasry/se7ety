@@ -11,6 +11,7 @@ class AppLocalStorage {
   static const String userAddress = 'address';
   static const String userEmail = 'email';
   static const String userPhone = 'phone';
+  static const String userPhone2 = 'phone2';
   static const String userAge = 'age';
   static const String userBio = 'bio';
 

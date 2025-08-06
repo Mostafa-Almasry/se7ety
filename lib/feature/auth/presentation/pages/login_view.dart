@@ -16,10 +16,6 @@ import 'package:se7ety/feature/auth/presentation/pages/register_view.dart';
 import 'package:se7ety/feature/doctor/doctor_nav_bar.dart';
 import 'package:se7ety/feature/patient/patient_nav_bar.dart';
 
-// accounts:
-// abdelrahmankhaled@se7ety.com
-// 12345678
-
 class LoginView extends StatefulWidget {
   const LoginView({super.key, required this.userType});
   final UserType userType;
@@ -123,8 +119,6 @@ class _LoginViewState extends State<LoginView> {
                       },
                       radius: 25,
                     ),
-                    // ahmed@ahmed.com
-                    // 12345678
                     const Gap(30),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,

@@ -113,8 +113,9 @@ showEditSettingsDialog({
                         newValue: newValue,
                         userType: userType,
                       );
-                      Navigator.pop(context); // Close loading dialog
-                      Navigator.pop(context); // Close edit dialog
+                      Navigator.pop(context);
+                      Navigator.pop(context);
+                      Navigator.pop(context);
                     }
                   } catch (e) {
                     Navigator.pop(context);
@@ -141,8 +142,13 @@ showPfpBottomSheet(BuildContext context, Function(File) onImageSelected) {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Text(
+              'اختر صورة الملف الشخصي:',
+              style: getBodyStyle(),
+            ),
+            const Gap(15),
             CustomButton(
-              text: 'Upload From Camera',
+              text: 'من الكاميرا 📷',
               width: double.infinity,
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -156,7 +162,7 @@ showPfpBottomSheet(BuildContext context, Function(File) onImageSelected) {
             ),
             const SizedBox(height: 15),
             CustomButton(
-              text: 'Upload From Gallery',
+              text: 'من المعرض 🖼️',
               width: double.infinity,
               onPressed: () async {
                 final navigator = Navigator.of(context);

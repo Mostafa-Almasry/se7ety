@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -49,12 +51,17 @@ class _RegisterViewState extends State<RegisterView> {
             Navigator.pop(context);
             showErrorDialog(context, state.message);
           } else if (state is AuthSuccessState) {
+            Navigator.pop(context);
             await showSuccessDialog(context, 'تم انشاء حسابك بنجاح');
             if (widget.userType == UserType.doctor) {
-              pushAndRemoveUntil(context, const DocRegistrationView());
+              push(context, const DocRegistrationView());
             } else {
               // change to patient view.
-              pushAndRemoveUntil(context, const PatientNavBar(page: 0,));
+              pushAndRemoveUntil(
+                  context,
+                  const PatientNavBar(
+                    page: 0,
+                  ));
             }
           }
         },
@@ -79,9 +86,14 @@ class _RegisterViewState extends State<RegisterView> {
                     CustomTextFormField(
                       controller: _nameController,
                       textAlign: TextAlign.end,
-
                       prefixIcon: const Icon(Icons.person),
                       hintText: 'الاسم',
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'الرجاء إدخال الاسم';
+                        }
+                        return null;
+                      },
                     ),
                     const Gap(20),
                     CustomTextFormField(
@@ -96,27 +108,26 @@ class _RegisterViewState extends State<RegisterView> {
                       controller: _passwordController,
                       hintText: '********',
                       textAlign: TextAlign.end,
-
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: const Icon(Icons.visibility),
                       isPassword: true,
                       keyboardType: TextInputType.visiblePassword,
                     ),
-
                     const Gap(25),
                     CustomButton(
                       text: 'تسجيل حساب',
                       onPressed: () {
                         if (_registerKey.currentState!.validate()) {
                           // If all fields are validated and validator returns true(valid), Do Register logic..
+                          log('📥 Sending name to RegisterEvent: ${_nameController.text}');
                           context.read<AuthBloc>().add(
-                            RegisterEvent(
-                              name: _nameController.text,
-                              email: _emailController.text,
-                              password: _passwordController.text,
-                              userType: widget.userType,
-                            ),
-                          );
+                                RegisterEvent(
+                                  name: _nameController.text,
+                                  email: _emailController.text,
+                                  password: _passwordController.text,
+                                  userType: widget.userType,
+                                ),
+                              );
                         }
                       },
                       radius: 25,

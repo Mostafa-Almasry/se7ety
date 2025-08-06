@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:se7ety/core/enum/user_type_enum.dart';
-import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/services/local_storage.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/widgets/bottom_navigation_button.dart';
@@ -58,7 +57,10 @@ class SettingsView extends StatelessWidget {
           text: "تسجيل الخروج",
           onPressed: () async {
             await AppLocalStorage.removeData(key: AppLocalStorage.uid);
-            pushReplacement(context, const WelcomeView());
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const WelcomeView()),
+              (route) => false,
+            );
           },
           color: AppColors.redColor,
         ),

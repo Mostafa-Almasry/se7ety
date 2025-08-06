@@ -11,7 +11,6 @@ import 'package:http/http.dart' as http;
 import 'package:se7ety/core/constants/assets_manager.dart';
 import 'package:se7ety/core/enum/user_type_enum.dart';
 import 'package:se7ety/core/functions/dialogs.dart';
-import 'package:se7ety/core/functions/navigation.dart';
 import 'package:se7ety/core/services/local_storage.dart';
 import 'package:se7ety/core/utils/app_colors.dart';
 import 'package:se7ety/core/utils/text_styles.dart';
@@ -139,13 +138,16 @@ class _ProfileViewState extends State<ProfileView> {
         actions: [
           IconButton(
             onPressed: () async {
-              final bool? didUpdate = await push<bool>(
-                context,
-                SettingsView(
-                  userType: widget.userType,
-                  doctorModel: _doctorModel,
+              final bool? didUpdate =
+                  await Navigator.of(context, rootNavigator: true).push<bool>(
+                MaterialPageRoute(
+                  builder: (_) => SettingsView(
+                    userType: widget.userType,
+                    doctorModel: _doctorModel,
+                  ),
                 ),
               );
+
               if (didUpdate == true) {
                 _refreshAll();
               }
@@ -163,6 +165,8 @@ class _ProfileViewState extends State<ProfileView> {
               children: [
                 GestureDetector(
                   onTap: () async {
+                    log('usertype is ${widget.userType}');
+                    log('name is ${_doctorModel?.name}');
                     await showPfpBottomSheet(context, (File imageFile) async {
                       setState(() => _isUploadingImage = true); // start loading
 
@@ -245,7 +249,7 @@ class _ProfileViewState extends State<ProfileView> {
                     builder: (context, state) {
                       final cubit = context.read<SettingsCubit>();
                       final name = widget.userType == UserType.doctor
-                          ? _doctorModel?.name ?? ''
+                          ? _doctorModel?.name ?? 'No Name Is In doctorModel'
                           : cubit.name;
                       final ageOrSpec = widget.userType == UserType.patient
                           ? cubit.age

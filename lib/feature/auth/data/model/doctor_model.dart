@@ -61,7 +61,7 @@ class DoctorModel {
     return DoctorModel(
       name: json['name'] as String? ?? 'Unknown Doctor',
       image: json['image'] as String? ?? '',
-      specialisation: json['specialisation'] as String? ?? 'General',
+      specialisation: json['specialisation'] as String? ?? 'غير محدد',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       email: json['email'] as String? ?? '',
       phone1: json['phone1'] as String? ?? '',

@@ -51,10 +51,6 @@ class _BookingViewState extends State<BookingView> {
     super.initState();
     final now = DateTime.now();
     getAvailableTimes(now);
-
-    _phoneController.text =
-        AppLocalStorage.getData(key: AppLocalStorage.userPhone) ?? '';
-
     _dateController.text = "";
 
     final savedName =
@@ -76,6 +72,30 @@ class _BookingViewState extends State<BookingView> {
             AppLocalStorage.cacheData(
               key: AppLocalStorage.userName,
               value: fetchedName,
+            );
+          }
+        });
+      }
+    }
+
+    final savedPhoneNumber =
+        AppLocalStorage.getData(key: AppLocalStorage.userPhone);
+    if (savedPhoneNumber != null && savedPhoneNumber.isNotEmpty) {
+      _phoneController.text = savedPhoneNumber;
+    } else {
+      final uid = AppLocalStorage.getData(key: AppLocalStorage.uid);
+      if (uid != null) {
+        FirebaseFirestore.instance
+            .collection('patients')
+            .doc(uid)
+            .get()
+            .then((doc) {
+          final fetchedPhoneNumber = doc.data()?['phone'] ?? '';
+          if (fetchedPhoneNumber.isNotEmpty) {
+            _phoneController.text = fetchedPhoneNumber;
+            AppLocalStorage.cacheData(
+              key: AppLocalStorage.userName,
+              value: fetchedPhoneNumber,
             );
           }
         });
@@ -173,9 +193,7 @@ class _BookingViewState extends State<BookingView> {
                                 const Gap(10),
                                 Row(
                                   children: [
-                                    Text(
-                                      widget.doctor.rating.toString() 
-                                    ),
+                                    Text(widget.doctor.rating.toString()),
                                     const SizedBox(width: 3),
                                     const Icon(
                                       Icons.star_rounded,

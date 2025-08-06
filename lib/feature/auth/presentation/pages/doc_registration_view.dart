@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,6 +43,7 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
   TimeOfDay? _endTimePicked;
   String _avatarImageUrl = '';
   bool isFirstPhoneNumber = false;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -112,7 +114,53 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('إكمال عملية التسجيل')),
+      appBar: AppBar(
+          leading: IconButton(
+            onPressed: () async {
+              showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog.adaptive(
+                        title: const Text('الغاء الحساب'),
+                        content: (const Text('هل انت متأكد من الغاء الحساب؟')),
+                        actions: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              backgroundColor: AppColors.color1,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('تراجع',
+                                style: getBodyStyle(color: AppColors.white)),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              backgroundColor: AppColors.redColor,
+                            ),
+                            onPressed: () async {
+                              final uid = AppLocalStorage.getData(
+                                  key: AppLocalStorage.uid);
+                              await FirebaseFirestore.instance
+                                  .collection('doctors')
+                                  .doc(uid)
+                                  .delete();
+                              Navigator.pop(context); // Pop the dialog
+                              Navigator.pop(context); // Pop this screen
+                              showErrorDialog(context, 'لم يتم انشاء الحساب');
+                            },
+                            child: Text('حذف الحساب',
+                                style: getBodyStyle(color: AppColors.white)),
+                          ),
+                        ],
+                      ));
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
+          title: const Text('إكمال عملية التسجيل')),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoadingState) {
@@ -121,13 +169,14 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
             Navigator.pop(context);
             showErrorDialog(context, 'حدث خطأ أثناء الحفظ');
           } else if (state is AuthSuccessState) {
-            Navigator.pop(context);
-            showSuccessDialog(context, 'تم حفظ البيانات بنجاح');
-            pushAndRemoveUntil(
+            Navigator.pop(context); // dismiss loading dialog
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              pushAndRemoveUntil(
                 context,
-                const DoctorNavBar(
-                  page: 0,
-                ));
+                const DoctorNavBar(page: 0),
+              );
+            });
           }
         },
         child: SingleChildScrollView(
@@ -144,17 +193,28 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                     GestureDetector(
                       onTap: () {
                         showPfpBottomSheet(context, (File imageFile) async {
-                          // Upload image to Cloudinary
-                          final imageUrl = await uploadToCloudinary(imageFile);
+                          setState(() => _isUploadingImage = true);
 
-                          if (imageUrl != null) {
-                            setState(() {
-                              _avatarImageUrl = imageUrl;
-                            });
-                          } else {
+                          try {
+                            final imageUrl =
+                                await uploadToCloudinary(imageFile);
+
+                            if (imageUrl != null) {
+                              setState(() {
+                                _avatarImageUrl = imageUrl;
+                              });
+                            } else {
+                              if (!mounted) return;
+                              showErrorDialog(context, 'فشل في رفع الصورة');
+                            }
+                          } catch (e) {
                             if (!mounted) return;
-                            // ignore: use_build_context_synchronously
-                            showErrorDialog(context, 'فشل في رفع الصورة');
+                            showErrorDialog(
+                                context, 'حدث خطأ أثناء رفع الصورة');
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isUploadingImage = false);
+                            }
                           }
                         });
                       },
@@ -168,14 +228,29 @@ class _DocRegistrationViewState extends State<DocRegistrationView> {
                                 : const AssetImage(AssetsManager.doctor)
                                     as ImageProvider,
                           ),
-                          CircleAvatar(
-                            radius: 15,
-                            backgroundColor:
-                                Theme.of(context).scaffoldBackgroundColor,
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              size: 20,
-                              color: AppColors.black,
+                          if (_isUploadingImage)
+                            const Positioned.fill(
+                              child: SizedBox(
+                                width: 130,
+                                height: 130,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 4,
+                                  color: AppColors.color1,
+                                ),
+                              ),
+                            ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 15,
+                              backgroundColor:
+                                  Theme.of(context).scaffoldBackgroundColor,
+                              child: const Icon(
+                                Icons.camera_alt_rounded,
+                                size: 20,
+                                color: AppColors.black,
+                              ),
                             ),
                           ),
                         ],

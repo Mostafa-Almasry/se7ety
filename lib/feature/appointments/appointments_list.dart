@@ -174,6 +174,18 @@ class _AppointmentsListState extends State<AppointmentsList> {
               return false;
             }
           }).toList();
+          if (filteredDocs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(AssetsManager.noScheduled, width: 200),
+                  const Gap(10),
+                  Text('لا يوجد حجوزات', style: getBodyStyle()),
+                ],
+              ),
+            );
+          }
 
           // Sort with null safety
           filteredDocs.sort((a, b) {

@@ -52,6 +52,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> register(RegisterEvent event, Emitter<AuthState> emit) async {
+    log('🧪 userType received during register: ${event.userType}');
+
     emit(AuthLoadingState());
     try {
       final credential =
@@ -60,27 +62,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
 
-      User? user = credential.user;
-      user?.updateDisplayName(event.name);
+      final user = credential.user;
 
-      // FireStore
+      await user?.updateDisplayName(event.name); // Ensure this completes
+      log('🔄 Auth displayName set to: ${user?.displayName}'); // Verify
+      if (user == null) {
+        emit(AuthErrorState('حدث خطأ أثناء إنشاء الحساب'));
+        return;
+      }
+
+      await user.updateDisplayName(event.name);
+      final uid = user.uid;
+      log('✅ Created user with UID: $uid');
+
       if (event.userType == UserType.patient) {
-        await FirebaseFirestore.instance
-            .collection("patients")
-            .doc(user?.uid)
-            .set({
-          'uid': user?.uid,
+        await FirebaseFirestore.instance.collection("patients").doc(uid).set({
+          'uid': uid,
           'name': event.name,
           'email': event.email,
           'age': '',
           'image': '',
-        });
+        }, SetOptions(merge: true));
       } else {
-        await FirebaseFirestore.instance
-            .collection("doctors")
-            .doc(user?.uid)
-            .set({
-          'uid': user?.uid,
+        log('📝 Saving doctor data: uid=$uid, name="${event.name}"');
+        await FirebaseFirestore.instance.collection("doctors").doc(uid).set({
+          'uid': uid,
           'name': event.name,
           'email': event.email,
           'image': '',
@@ -91,27 +97,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           'address': '',
           'phone1': '',
           'phone2': '',
-          'createdAt': '',
           'rating': 0,
-        });
+        }, SetOptions(merge: true));
       }
 
+      await AppLocalStorage.cacheData(key: AppLocalStorage.uid, value: uid);
       await AppLocalStorage.cacheData(
-        key: AppLocalStorage.uid,
-        value: user?.uid,
-      );
+          key: AppLocalStorage.userType, value: event.userType.name);
 
       await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userType,
-        value: event.userType.name,
-      );
-      await AppLocalStorage.cacheData(
-        key: AppLocalStorage.userName,
-        value: event.name,
-      );
+          key: AppLocalStorage.userName, value: event.name);
+      log('🗃️ Cached userName = ${event.name}');
+      await saveFcmToken(uid, event.userType);
+      final docCheck = await FirebaseFirestore.instance
+          .collection(
+              event.userType == UserType.patient ? "patients" : "doctors")
+          .doc(uid)
+          .get();
 
-      await saveFcmToken(user!.uid, event.userType);
-
+      log('🆕 Initial Firestore doc: ${docCheck.data()}');
       emit(AuthSuccessState(userType: event.userType));
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
@@ -149,6 +153,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       UserType userType;
       String userName = '';
+
+      await FirebaseAuth.instance.currentUser
+          ?.reload(); // Force refresh auth data
+      final updatedUser = FirebaseAuth.instance.currentUser;
+      userName = updatedUser?.displayName ?? userName; // Prefer auth name
+
+      log('🔑 Logged in user: ${updatedUser?.displayName}');
 
       if (patientDoc.exists) {
         userType = UserType.patient;
@@ -208,12 +219,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoadingState());
     final uid = AppLocalStorage.getData(key: AppLocalStorage.uid);
     if (uid == null) {
-      showErrorDialog(context, 'لم يتم العثور على هوية المستخدم');
-      emit(AuthErrorState('لم يتم العثور على هوية المستخدم'));
+      showErrorDialog(context, 'User ID not found');
       return;
     }
+
     try {
-      await FirebaseFirestore.instance.collection('doctors').doc(uid).update({
+      // Get name from Firebase Auth (most reliable source)
+      final currentUser = FirebaseAuth.instance.currentUser;
+      String name = currentUser?.displayName ?? '';
+
+      if (name.isEmpty) {
+        // Fallback to local storage if needed
+        name = AppLocalStorage.getData(key: AppLocalStorage.userName) ?? '';
+      }
+
+      log('🔄 Updating doctor with name: "$name"');
+
+      await FirebaseFirestore.instance.collection('doctors').doc(uid).set({
+        'uid': uid,
+        'name': name, // CRITICAL: ADD NAME HERE
         'image': imageUrl,
         'specialisation': specialisation,
         'openHour': startTime,
@@ -223,27 +247,60 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         'phone2': phone2,
         'bio': bio,
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
+      log('🔥 DOCTOR DATA SENT: ${{
+        'uid': uid,
+        'name': name,
+        // 'email': email,
+        'image': imageUrl,
+        'specialisation': specialisation,
+        'openHour': startTime,
+        'closeHour': endTime,
+        'address': address,
+        'phone1': phone1,
+        'phone2': phone2,
+        'bio': bio,
+        'createdAt': 'ServerTimestamp',
+        'rating': 0,
+      }}');
+
+      // VERIFY: Add this debug check
+      final doc = await FirebaseFirestore.instance
+          .collection('doctors')
+          .doc(uid)
+          .get(const GetOptions(source: Source.server));
+
+      log('✅ Doctor document after update: ${doc.data()}');
+
+      // FIXED: Use correct enum values and remove redundant updates
       updateLocalUserDetails(
-          field: ProfileFieldsEnum.bio,
-          newValue: event.bio,
-          userType: UserType.doctor);
+        field: ProfileFieldsEnum.bio,
+        newValue: bio,
+        userType: UserType.doctor,
+      );
       updateLocalUserDetails(
-          field: ProfileFieldsEnum.phone,
-          newValue: event.phone1,
-          userType: UserType.doctor);
+        field: ProfileFieldsEnum.phone, // Will save to 'phone1' for doctors
+        newValue: phone1,
+        userType: UserType.doctor,
+      );
       updateLocalUserDetails(
-          field: ProfileFieldsEnum.phone2,
-          newValue: event.phone2,
-          userType: UserType.doctor);
+        field: ProfileFieldsEnum.phone2, // NEW: Properly save phone2
+        newValue: phone2,
+        userType: UserType.doctor,
+      );
       updateLocalUserDetails(
-          field: ProfileFieldsEnum.address,
-          newValue: event.address,
-          userType: UserType.doctor);
+        field: ProfileFieldsEnum.address,
+        newValue: address,
+        userType: UserType.doctor,
+      );
+
       AppLocalStorage.cacheData(
           key: AppLocalStorage.isSignupComplete, value: true);
       emit(AuthSuccessState(userType: UserType.doctor));
-    } catch (e) {
+      log('✅ Emitted AuthSuccessState after doc registration');
+    } catch (e, stack) {
+      // Add stack trace
+      log('🔥 DOC REGISTRATION ERROR', error: e, stackTrace: stack);
       showErrorDialog(context, 'حدث خطأ أثناء الحفظ: $e');
     }
   }
@@ -282,19 +339,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       // Update all relevant local storage values at once
       await Future.wait<void>([
-      if (imageUrl != null)
-        AppLocalStorage.cacheData(
-            key: AppLocalStorage.imageUrl, value: imageUrl),
-      if (name != null)
-        AppLocalStorage.cacheData(
-            key: AppLocalStorage.userName, value: name),
-      if (address != null)
-        AppLocalStorage.cacheData(
-            key: AppLocalStorage.userAddress, value: address),
-      if (phone != null)
-        AppLocalStorage.cacheData(
-            key: AppLocalStorage.userPhone, value: phone),
-    ]);
+        if (imageUrl != null)
+          AppLocalStorage.cacheData(
+              key: AppLocalStorage.imageUrl, value: imageUrl),
+        if (name != null)
+          AppLocalStorage.cacheData(key: AppLocalStorage.userName, value: name),
+        if (address != null)
+          AppLocalStorage.cacheData(
+              key: AppLocalStorage.userAddress, value: address),
+        if (phone != null)
+          AppLocalStorage.cacheData(
+              key: AppLocalStorage.userPhone, value: phone),
+      ]);
       // Add this to update UI immediately
       emit(ProfileUpdateSuccessState(
           imageUrl: imageUrl, name: name, address: address, phone: phone));
